@@ -1,0 +1,6 @@
+references/corpus/
+references/samples/
+references/community/
+node_modules/
+*.bak
+*.bak[0-9]*

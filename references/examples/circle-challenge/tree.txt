@@ -1,0 +1,1 @@
+容器节点:container@stretch(背景:image@0,0,1600x900,分数文本:text@0,350,218x68,圆圈容器:container@150x150(圆圈图片:image@80x80,圆圈点击区域:area@150x50))

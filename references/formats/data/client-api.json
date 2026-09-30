@@ -1,0 +1,2576 @@
+{
+ "source": {
+  "id": "mhtakr07vej4",
+  "title": "客户端控件API文档",
+  "crawledAt": "2026-09-25T17:54:09.605Z",
+  "sha256": "7cf7d8c377b7f9869334b9433b44659db398f83ae60778681627478f27a0e9ed"
+ },
+ "lifecycle": [
+  {
+   "name": "OnInit",
+   "params": [],
+   "desc": "脚本初始化时调用"
+  },
+  {
+   "name": "OnStart",
+   "params": [],
+   "desc": "脚本启动时调用"
+  },
+  {
+   "name": "OnEnable",
+   "params": [],
+   "desc": "脚本启用时调用"
+  },
+  {
+   "name": "OnDisable",
+   "params": [],
+   "desc": "脚本停用时调用"
+  },
+  {
+   "name": "OnUpdate",
+   "params": [
+    "dt:number"
+   ],
+   "desc": "脚本逐帧更新时调用，不受关卡时停影响"
+  },
+  {
+   "name": "OnLevelUpdate",
+   "params": [
+    "dt:number"
+   ],
+   "desc": "关卡逐帧更新时调用，受关卡时停影响"
+  },
+  {
+   "name": "OnDestroy",
+   "params": [],
+   "desc": "脚本销毁时调用"
+  }
+ ],
+ "globals": {
+  "script": "Script",
+  "Enum": "Enum"
+ },
+ "globalFunctions": {
+  "typeof": {
+   "params": [
+    {
+     "name": "value"
+    }
+   ],
+   "returns": "string",
+   "desc": "返回运行时类型名称；用于识别宿主对象"
+  },
+  "print": {
+   "params": [
+    {
+     "name": "...",
+     "vararg": true
+    }
+   ],
+   "returns": "",
+   "desc": "将传入值写入普通级别日志；该函数不阻断运行"
+  },
+  "printerr": {
+   "params": [
+    {
+     "name": "...",
+     "vararg": true
+    }
+   ],
+   "returns": "",
+   "desc": "将传入值写入错误级别日志；该函数不抛出 Lua 错误，也不阻断运行"
+  },
+  "debug.traceback": {
+   "params": [
+    {
+     "name": "message",
+     "optional": true
+    },
+    {
+     "name": "level",
+     "optional": true
+    }
+   ],
+   "returns": "string",
+   "desc": "生成并返回调用栈文本； message 添加文本开头的说明， level 指定调用栈起始层级；该函数仅返回文本，不自动写入日志"
+  },
+  "math.isnan": {
+   "params": [
+    {
+     "name": "n"
+    }
+   ],
+   "returns": "boolean",
+   "desc": "判断数值是否为 NaN"
+  },
+  "math.isinf": {
+   "params": [
+    {
+     "name": "n"
+    }
+   ],
+   "returns": "boolean",
+   "desc": "判断数值是否为正负无穷"
+  }
+ },
+ "color": {
+  "constructor": {
+   "params": [
+    {
+     "name": "r",
+     "type": "number"
+    },
+    {
+     "name": "g",
+     "type": "number"
+    },
+    {
+     "name": "b",
+     "type": "number"
+    },
+    {
+     "name": "a",
+     "optional": true,
+     "type": "number"
+    }
+   ],
+   "returns": "ColorValue",
+   "desc": "由 0–255 RGBA 创建颜色； a 可省略，也可传 nil 。传nil时等同于255（不透明）"
+  },
+  "functions": {
+   "FromRGB": {
+    "params": [
+     {
+      "name": "r",
+      "type": "number"
+     },
+     {
+      "name": "g",
+      "type": "number"
+     },
+     {
+      "name": "b",
+      "type": "number"
+     }
+    ],
+    "returns": "ColorValue",
+    "desc": "由 0–255 RGB 创建颜色"
+   },
+   "FromRGBA": {
+    "params": [
+     {
+      "name": "r",
+      "type": "number"
+     },
+     {
+      "name": "g",
+      "type": "number"
+     },
+     {
+      "name": "b",
+      "type": "number"
+     },
+     {
+      "name": "a",
+      "optional": true,
+      "type": "number"
+     }
+    ],
+    "returns": "ColorValue",
+    "desc": "由 0–255 RGBA 创建颜色； a 可省略或传 nil 。传nil时等同于255（不透明）"
+   },
+   "ToRGBA": {
+    "params": [
+     {
+      "name": "colorValue",
+      "type": "ColorValue"
+     }
+    ],
+    "returns": "r, g, b, a: number",
+    "desc": "将颜色拆分为0-255的RGBA四个值"
+   }
+  }
+ },
+ "game": {
+  "PrintClientUITree": {
+   "params": [],
+   "returns": "",
+   "desc": "将当前客户端控件树按父子层级写入日志"
+  },
+  "InstantiateClientUIControl": {
+   "params": [
+    {
+     "name": "controlPrefabIndex",
+     "type": "integer"
+    },
+    {
+     "name": "parent",
+     "type": "ClientUIBaseControl"
+    }
+   ],
+   "returns": "ClientUIBaseControl",
+   "desc": "根据已配置的控件模板索引，在 parent 下创建控件实例"
+  },
+  "DestroyClientUIControl": {
+   "params": [
+    {
+     "name": "control",
+     "type": "ClientUIBaseControl"
+    }
+   ],
+   "returns": "",
+   "desc": "销毁指定客户端控件实例"
+  },
+  "GetClientUIControl": {
+   "params": [
+    {
+     "name": "controlId",
+     "type": "integer"
+    }
+   ],
+   "returns": "ClientUIBaseControl",
+   "desc": "按客户端控件运行时ID获取控件"
+  },
+  "FindClientUIRoot": {
+   "params": [
+    {
+     "name": "nodeName",
+     "type": "string"
+    }
+   ],
+   "returns": "ClientUIBaseControl",
+   "desc": "查找名称为 nodeName 的 UI 根控件"
+  },
+  "GetClientUIRoots": {
+   "params": [],
+   "returns": "ClientUIBaseControl[]",
+   "desc": "获取全部 UI 根控件。即实际显示的客户端控件容器画布中的默认容器节点"
+  },
+  "GetUICanvasSize": {
+   "params": [],
+   "returns": "x, y: number",
+   "desc": "获取 UI 画布宽高"
+  },
+  "GetCursorUIPos": {
+   "params": [],
+   "returns": "x, y: number",
+   "desc": "获取光标 UI 坐标"
+  },
+  "GetDevice": {
+   "params": [],
+   "returns": "Device",
+   "desc": "获取当前输入设备类型"
+  },
+  "SetControllerFocus": {
+   "params": [
+    {
+     "name": "control",
+     "type": "ClientUIBaseControl"
+    }
+   ],
+   "returns": "",
+   "desc": "设置手柄当前聚焦控件"
+  },
+  "GetControllerFocus": {
+   "params": [],
+   "returns": "ClientUIBaseControl",
+   "desc": "获取当前聚焦控件"
+  },
+  "GetControllerLeftStickAxis": {
+   "params": [],
+   "returns": "horizontal, vertical: number",
+   "desc": "获取左摇杆轴值"
+  },
+  "GetControllerRightStickAxis": {
+   "params": [],
+   "returns": "horizontal, vertical: number",
+   "desc": "获取右摇杆轴值"
+  },
+  "Tween": {
+   "params": [
+    {
+     "name": "object",
+     "type": "any"
+    },
+    {
+     "name": "tweenDataTable",
+     "type": "table"
+    },
+    {
+     "name": "duration",
+     "type": "number"
+    }
+   ],
+   "returns": "Tween",
+   "desc": "按目标字段和持续时间为对象创建补间动画。传入参数分别为传入对象、传入对象的tweenable字段名为键，目标值为值组成的table，持续时间。"
+  },
+  "TweenSequence": {
+   "params": [],
+   "returns": "TweenSequence",
+   "desc": "创建空的补间动画序列"
+  },
+  "ServerSignal": {
+   "params": [
+    {
+     "name": "signalName",
+     "type": "string"
+    }
+   ],
+   "returns": "ServerSignal",
+   "desc": "使用服务器约定的信号名称 signalName 创建服务器信号"
+  },
+  "GetGlobalCustomVariableValue": {
+   "params": [
+    {
+     "name": "entityType",
+     "type": "CustomVariableEntityType"
+    },
+    {
+     "name": "customVariableName",
+     "type": "string"
+    }
+   ],
+   "returns": "any",
+   "desc": "读取 entityType 和 customVariableName 对应的全局自定义变量，支持复杂变量结构（列表、字典、结构体）"
+  },
+  "PauseLevelTime": {
+   "params": [
+    {
+     "name": "pause",
+     "type": "boolean"
+    }
+   ],
+   "returns": "",
+   "desc": "单人模式下设置关卡时停状态； true 开启， false 关闭；不暂停脚本自身"
+  },
+  "IsLevelTimePaused": {
+   "params": [],
+   "returns": "boolean",
+   "desc": "查询是否处于关卡时停"
+  },
+  "PlayAudio2D": {
+   "params": [
+    {
+     "name": "audioId",
+     "type": "integer"
+    }
+   ],
+   "returns": "integer",
+   "desc": "按已配置的音效 ID 播放 2D 音效，并返回音效实例 ID"
+  },
+  "StopAudio": {
+   "params": [
+    {
+     "name": "audioInstanceId",
+     "type": "integer"
+    }
+   ],
+   "returns": "",
+   "desc": "停止指定音效实例"
+  },
+  "IsAudioAlive": {
+   "params": [
+    {
+     "name": "audioInstanceId",
+     "type": "integer"
+    }
+   ],
+   "returns": "boolean",
+   "desc": "查询音效实例是否存活"
+  },
+  "GetLanguageType": {
+   "params": [],
+   "returns": "LanguageType",
+   "desc": "获取当前语言"
+  },
+  "GetStageMode": {
+   "params": [],
+   "returns": "StageMode",
+   "desc": "获取当前关卡模式"
+  },
+  "IsTestPlay": {
+   "params": [],
+   "returns": "boolean",
+   "desc": "查询当前是否处于测试游玩状态"
+  },
+  "GetText": {
+   "params": [
+    {
+     "name": "textMapId",
+     "type": "string"
+    }
+   ],
+   "returns": "string",
+   "desc": "按已配置的文本映射 ID 获取本地化文本"
+  }
+ },
+ "types": {
+  "Script": {
+   "fields": {
+    "alive": {
+     "type": "boolean",
+     "access": "r",
+     "desc": "脚本实例是否存活"
+    },
+    "scriptMappingId": {
+     "type": "integer",
+     "access": "r",
+     "desc": "脚本映射ID"
+    },
+    "object": {
+     "type": "any",
+     "access": "r",
+     "desc": "脚本所挂载的宿主对象"
+    },
+    "path": {
+     "type": "string",
+     "access": "r",
+     "desc": "脚本路径"
+    },
+    "enabled": {
+     "type": "boolean",
+     "access": "rw",
+     "desc": "脚本启用状态"
+    }
+   },
+   "methods": {
+    "EnableUpdate": {
+     "params": [
+      {
+       "name": "enabled",
+       "type": "boolean"
+      }
+     ],
+     "returns": "",
+     "desc": "控制当前脚本的逐帧更新；false 关闭，true 重新启用"
+    },
+    "GetParam": {
+     "params": [
+      {
+       "name": "paramName",
+       "type": "string"
+      }
+     ],
+     "returns": "any",
+     "desc": "按变量名称 paramName 读取当前脚本内对应变量的参数"
+    },
+    "Invoke": {
+     "params": [
+      {
+       "name": "funcName",
+       "type": "string"
+      },
+      {
+       "name": "...",
+       "type": "any"
+      }
+     ],
+     "returns": "",
+     "desc": "在UI脚本内定义的全局方法（脚本内环境）；调用当前脚本中名称为 funcName 的函数；参数应使用运行时支持的可传递类型"
+    },
+    "RegisterServerSignalHandler": {
+     "params": [
+      {
+       "name": "signalName",
+       "type": "string"
+      },
+      {
+       "name": "callback",
+       "type": "fun(signalName: string, signalParams: any[])"
+      }
+     ],
+     "returns": "",
+     "desc": "注册 signalName 对应的服务器信号监听；回调参数依次为信号名称和信号参数数组"
+    },
+    "UnregisterServerSignalHandler": {
+     "params": [
+      {
+       "name": "signalName",
+       "type": "string"
+      }
+     ],
+     "returns": "",
+     "desc": "移除 signalName 对应的服务器信号监听"
+    },
+    "RegisterCustomVariableChangedHandler": {
+     "params": [
+      {
+       "name": "entityType",
+       "type": "CustomVariableEntityType"
+      },
+      {
+       "name": "customVariableName",
+       "type": "string"
+      },
+      {
+       "name": "callback",
+       "type": "fun(entityType: CustomVariableEntityType, customVariableName: string)"
+      }
+     ],
+     "returns": "",
+     "desc": "监听 entityType 和 customVariableName 对应的全局自定义变量变化；回调仅提供实体类型和变量名称，当前值需通过 game.GetGlobalCustomVariableValue 读取"
+    },
+    "UnregisterCustomVariableChangedHandler": {
+     "params": [
+      {
+       "name": "entityType",
+       "type": "CustomVariableEntityType"
+      },
+      {
+       "name": "customVariableName",
+       "type": "string"
+      }
+     ],
+     "returns": "",
+     "desc": "移除 entityType 和 customVariableName 对应的自定义变量监听"
+    }
+   }
+  },
+  "Tween": {
+   "fields": {},
+   "methods": {
+    "SetEase": {
+     "params": [
+      {
+       "name": "easeType",
+       "type": "EaseType"
+      }
+     ],
+     "returns": "Tween",
+     "desc": "设置缓动类型并返回当前实例"
+    },
+    "SetRelative": {
+     "params": [
+      {
+       "name": "relative",
+       "type": "boolean"
+      }
+     ],
+     "returns": "Tween",
+     "desc": "设置 tweenDataTable 中目标值的解释方式；false 表示绝对目标值，true 表示相对当前值的增量"
+    },
+    "Play": {
+     "params": [],
+     "returns": "Tween",
+     "desc": "开始播放并返回当前实例"
+    },
+    "Pause": {
+     "params": [],
+     "returns": "",
+     "desc": "暂停并保留当前进度"
+    },
+    "Resume": {
+     "params": [],
+     "returns": "",
+     "desc": "从暂停处继续播放"
+    },
+    "Restart": {
+     "params": [],
+     "returns": "",
+     "desc": "回到初始状态并重新播放"
+    },
+    "Complete": {
+     "params": [],
+     "returns": "",
+     "desc": "立即切换到结束状态并完成"
+    },
+    "Kill": {
+     "params": [
+      {
+       "name": "complete",
+       "type": "boolean"
+      }
+     ],
+     "returns": "",
+     "desc": "销毁实例；true 表示先切换到结束状态并触发完成回调，false 表示保持当前状态结束且不触发完成回调"
+    },
+    "SetOnComplete": {
+     "params": [
+      {
+       "name": "onComplete",
+       "type": "fun()"
+      }
+     ],
+     "returns": "Tween",
+     "desc": "设置全部循环完成后的回调并返回当前实例"
+    },
+    "SetOnStepComplete": {
+     "params": [
+      {
+       "name": "onStepComplete",
+       "type": "fun()"
+      }
+     ],
+     "returns": "Tween",
+     "desc": "设置步骤完成回调并返回当前实例"
+    },
+    "SetLoops": {
+     "params": [
+      {
+       "name": "times",
+       "type": "integer"
+      }
+     ],
+     "returns": "Tween",
+     "desc": "设置循环次数并返回当前实例；负数表示无限循环"
+    }
+   }
+  },
+  "TweenSequence": {
+   "fields": {},
+   "methods": {
+    "Append": {
+     "params": [
+      {
+       "name": "tween",
+       "type": "Tween"
+      }
+     ],
+     "returns": "TweenSequence",
+     "desc": "在序列末尾接入补间动画补间动画"
+    },
+    "AppendInterval": {
+     "params": [
+      {
+       "name": "interval",
+       "type": "number"
+      }
+     ],
+     "returns": "TweenSequence",
+     "desc": "在序列末尾接入指定秒数的等待时间"
+    },
+    "AppendCallback": {
+     "params": [
+      {
+       "name": "callback",
+       "type": "fun()"
+      }
+     ],
+     "returns": "TweenSequence",
+     "desc": "在序列末尾接入回调"
+    },
+    "Join": {
+     "params": [
+      {
+       "name": "tween",
+       "type": "Tween"
+      }
+     ],
+     "returns": "TweenSequence",
+     "desc": "与当前队尾步骤同时播放；该步骤以最晚结束者为准"
+    },
+    "Insert": {
+     "params": [
+      {
+       "name": "time",
+       "type": "number"
+      },
+      {
+       "name": "tween",
+       "type": "Tween"
+      }
+     ],
+     "returns": "TweenSequence",
+     "desc": "在指定时间点插入并行补间动画补间动画"
+    },
+    "InsertCallback": {
+     "params": [
+      {
+       "name": "time",
+       "type": "number"
+      },
+      {
+       "name": "callback",
+       "type": "fun()"
+      }
+     ],
+     "returns": "TweenSequence",
+     "desc": "在指定时间点插入回调"
+    },
+    "Play": {
+     "params": [],
+     "returns": "TweenSequence",
+     "desc": "开始播放并返回当前实例"
+    },
+    "Pause": {
+     "params": [],
+     "returns": "",
+     "desc": "暂停序列"
+    },
+    "Resume": {
+     "params": [],
+     "returns": "",
+     "desc": "继续播放序列"
+    },
+    "Restart": {
+     "params": [],
+     "returns": "",
+     "desc": "回到初始状态并重新播放"
+    },
+    "Complete": {
+     "params": [],
+     "returns": "",
+     "desc": "立即完成整个序列"
+    },
+    "Kill": {
+     "params": [
+      {
+       "name": "complete",
+       "type": "boolean"
+      }
+     ],
+     "returns": "",
+     "desc": "销毁序列；true 表示先完成，false 表示保持当前状态结束"
+    },
+    "SetOnComplete": {
+     "params": [
+      {
+       "name": "onComplete",
+       "type": "fun()"
+      }
+     ],
+     "returns": "TweenSequence",
+     "desc": "设置整个序列完成回调并返回当前实例"
+    },
+    "SetOnStepComplete": {
+     "params": [
+      {
+       "name": "onStepComplete",
+       "type": "fun()"
+      }
+     ],
+     "returns": "TweenSequence",
+     "desc": "设置步骤完成回调并返回当前实例"
+    },
+    "SetLoops": {
+     "params": [
+      {
+       "name": "times",
+       "type": "integer"
+      }
+     ],
+     "returns": "TweenSequence",
+     "desc": "设置循环次数并返回当前实例；负数表示无限循环"
+    }
+   }
+  },
+  "ServerSignal": {
+   "fields": {},
+   "methods": {
+    "AddParam": {
+     "params": [
+      {
+       "name": "paramType",
+       "type": "ParamType"
+      },
+      {
+       "name": "paramValue",
+       "type": "any"
+      }
+     ],
+     "returns": "",
+     "desc": "paramType 指定参数类型，paramValue 指定参数值"
+    },
+    "SendSignal": {
+     "params": [],
+     "returns": "",
+     "desc": "发送已构建的服务器信号"
+    },
+    "AddInt": {
+     "params": [
+      {
+       "name": "intValue",
+       "type": "integer"
+      }
+     ],
+     "returns": "",
+     "desc": "添加整数参数"
+    },
+    "AddIntList": {
+     "params": [
+      {
+       "name": "intListValue",
+       "type": "integer[]"
+      }
+     ],
+     "returns": "",
+     "desc": "添加整数列表参数"
+    },
+    "AddFloat": {
+     "params": [
+      {
+       "name": "floatValue",
+       "type": "number"
+      }
+     ],
+     "returns": "",
+     "desc": "添加浮点数参数"
+    },
+    "AddFloatList": {
+     "params": [
+      {
+       "name": "floatListValue",
+       "type": "number[]"
+      }
+     ],
+     "returns": "",
+     "desc": "添加浮点数列表参数"
+    },
+    "AddString": {
+     "params": [
+      {
+       "name": "stringValue",
+       "type": "string"
+      }
+     ],
+     "returns": "",
+     "desc": "添加字符串参数"
+    },
+    "AddStringList": {
+     "params": [
+      {
+       "name": "stringListValue",
+       "type": "string[]"
+      }
+     ],
+     "returns": "",
+     "desc": "添加字符串列表参数"
+    },
+    "AddVector3": {
+     "params": [
+      {
+       "name": "vector3Value",
+       "type": "table"
+      }
+     ],
+     "returns": "",
+     "desc": "添加三维向量参数；传入以x,y,z为键，目标值为值组成的table"
+    },
+    "AddVector3List": {
+     "params": [
+      {
+       "name": "vector3ListValue",
+       "type": "table[]"
+      }
+     ],
+     "returns": "",
+     "desc": "添加三维向量列表参数；传入以x,y,z为键，目标值为值组成的table列表。"
+    },
+    "AddBool": {
+     "params": [
+      {
+       "name": "boolValue",
+       "type": "boolean"
+      }
+     ],
+     "returns": "",
+     "desc": "添加布尔值参数"
+    },
+    "AddBoolList": {
+     "params": [
+      {
+       "name": "boolListValue",
+       "type": "boolean[]"
+      }
+     ],
+     "returns": "",
+     "desc": "添加布尔值列表参数"
+    },
+    "AddGuid": {
+     "params": [
+      {
+       "name": "guidValue",
+       "type": "integer"
+      }
+     ],
+     "returns": "",
+     "desc": "添加 GUID 参数"
+    },
+    "AddGuidList": {
+     "params": [
+      {
+       "name": "guidListValue",
+       "type": "integer[]"
+      }
+     ],
+     "returns": "",
+     "desc": "添加 GUID 列表参数"
+    },
+    "AddEntity": {
+     "params": [
+      {
+       "name": "entityValue",
+       "type": "integer"
+      }
+     ],
+     "returns": "",
+     "desc": "添加实体参数"
+    },
+    "AddEntityList": {
+     "params": [
+      {
+       "name": "entityListValue",
+       "type": "integer[]"
+      }
+     ],
+     "returns": "",
+     "desc": "添加实体列表参数"
+    },
+    "AddPrefabId": {
+     "params": [
+      {
+       "name": "prefabIdValue",
+       "type": "integer"
+      }
+     ],
+     "returns": "",
+     "desc": "添加元件 ID 参数"
+    },
+    "AddPrefabIdList": {
+     "params": [
+      {
+       "name": "prefabIdListValue",
+       "type": "integer[]"
+      }
+     ],
+     "returns": "",
+     "desc": "添加元件 ID 列表参数"
+    },
+    "AddConfigId": {
+     "params": [
+      {
+       "name": "configIdValue",
+       "type": "integer"
+      }
+     ],
+     "returns": "",
+     "desc": "添加配置 ID 参数"
+    },
+    "AddConfigIdList": {
+     "params": [
+      {
+       "name": "configIdListValue",
+       "type": "integer[]"
+      }
+     ],
+     "returns": "",
+     "desc": "添加配置 ID 列表参数"
+    }
+   }
+  },
+  "EnumItem": {
+   "fields": {
+    "Name": {
+     "type": "string",
+     "access": "r",
+     "desc": "枚举值名称"
+    },
+    "FullName": {
+     "type": "string",
+     "access": "r",
+     "desc": "枚举值完整名称"
+    },
+    "EnumType": {
+     "type": "string",
+     "access": "r",
+     "desc": "枚举类型名称"
+    }
+   },
+   "methods": {}
+  },
+  "ClientUIBaseControl": {
+   "fields": {
+    "alive": {
+     "type": "boolean",
+     "access": "r",
+     "desc": "控件是否存活"
+    },
+    "id": {
+     "type": "integer",
+     "access": "r",
+     "desc": "运行时ID"
+    },
+    "prefabIndex": {
+     "type": "integer",
+     "access": "r",
+     "desc": "控件模板索引"
+    },
+    "active": {
+     "type": "boolean",
+     "access": "r",
+     "desc": "激活状态；true 时控件可见且挂载脚本逻辑运行，false 时控件不可见且脚本逻辑停止运行。默认为false。"
+    },
+    "activeInHierarchy": {
+     "type": "boolean",
+     "access": "r",
+     "desc": "计入全部父级后的实际激活状态"
+    },
+    "visible": {
+     "type": "boolean",
+     "access": "r",
+     "desc": "仅控制可见性，不改变激活状态或脚本逻辑运行状态"
+    },
+    "name": {
+     "type": "string",
+     "access": "rw",
+     "desc": "控件名称"
+    },
+    "parent": {
+     "type": "ClientUIBaseControl",
+     "access": "rw",
+     "desc": "父控件"
+    },
+    "anchoredPositionX": {
+     "type": "number",
+     "access": "rw",
+     "tween": true,
+     "desc": "位置、Tweenable"
+    },
+    "anchoredPositionY": {
+     "type": "number",
+     "access": "rw",
+     "tween": true,
+     "desc": "位置、Tweenable"
+    },
+    "sizeDeltaX": {
+     "type": "number",
+     "access": "rw",
+     "tween": true,
+     "desc": "大小差异、Tweenable"
+    },
+    "sizeDeltaY": {
+     "type": "number",
+     "access": "rw",
+     "tween": true,
+     "desc": "大小差异、Tweenable"
+    },
+    "anchorMinX": {
+     "type": "number",
+     "access": "rw",
+     "tween": true,
+     "desc": "最小锚点、Tweenable"
+    },
+    "anchorMinY": {
+     "type": "number",
+     "access": "rw",
+     "tween": true,
+     "desc": "最小锚点、Tweenable"
+    },
+    "anchorMaxX": {
+     "type": "number",
+     "access": "rw",
+     "tween": true,
+     "desc": "最大锚点、Tweenable"
+    },
+    "anchorMaxY": {
+     "type": "number",
+     "access": "rw",
+     "tween": true,
+     "desc": "最大锚点、Tweenable"
+    },
+    "pivotX": {
+     "type": "number",
+     "access": "rw",
+     "tween": true,
+     "desc": "中心、Tweenable"
+    },
+    "pivotY": {
+     "type": "number",
+     "access": "rw",
+     "tween": true,
+     "desc": "中心、Tweenable"
+    },
+    "localScaleX": {
+     "type": "number",
+     "access": "rw",
+     "tween": true,
+     "desc": "缩放、Tweenable"
+    },
+    "localScaleY": {
+     "type": "number",
+     "access": "rw",
+     "tween": true,
+     "desc": "缩放、Tweenable"
+    },
+    "localScaleZ": {
+     "type": "number",
+     "access": "rw",
+     "tween": true,
+     "desc": "缩放、Tweenable"
+    },
+    "localRotationX": {
+     "type": "number",
+     "access": "rw",
+     "tween": true,
+     "desc": "旋转、Tweenable"
+    },
+    "localRotationY": {
+     "type": "number",
+     "access": "rw",
+     "tween": true,
+     "desc": "旋转、Tweenable"
+    },
+    "localRotationZ": {
+     "type": "number",
+     "access": "rw",
+     "tween": true,
+     "desc": "旋转、Tweenable"
+    },
+    "canControllerFocus": {
+     "type": "boolean",
+     "access": "rw",
+     "desc": "可被手柄导航摇杆聚焦"
+    }
+   },
+   "methods": {
+    "GetChildren": {
+     "params": [],
+     "returns": "ClientUIBaseControl[]",
+     "desc": "获取直接子控件"
+    },
+    "GetChild": {
+     "params": [
+      {
+       "name": "name"
+      }
+     ],
+     "returns": "ClientUIBaseControl",
+     "desc": "获取当前控件中名称为 name 的直接子控件"
+    },
+    "FindChild": {
+     "params": [
+      {
+       "name": "path"
+      }
+     ],
+     "returns": "ClientUIBaseControl",
+     "desc": "按路径查找子控件"
+    },
+    "SetActive": {
+     "params": [
+      {
+       "name": "active"
+      }
+     ],
+     "returns": "",
+     "desc": "设置激活状态；关闭后控件不可见且挂载脚本逻辑停止运行。"
+    },
+    "SetVisible": {
+     "params": [
+      {
+       "name": "visible"
+      }
+     ],
+     "returns": "",
+     "desc": "仅设置可见性，不改变激活状态，也不停止脚本逻辑"
+    },
+    "GetSiblingIndex": {
+     "params": [],
+     "returns": "integer",
+     "desc": "获取同级排序索引；返回值范围为 0 到父控件的子控件数量减一"
+    },
+    "SetSiblingIndex": {
+     "params": [
+      {
+       "name": "index"
+      }
+     ],
+     "returns": "boolean",
+     "desc": "设置同级排序索引；index 范围为 0 到父控件的子控件数量减一；数值越大通常越靠后、显示越靠上"
+    },
+    "SetAsFirstSibling": {
+     "params": [],
+     "returns": "boolean",
+     "desc": "移到同级首位"
+    },
+    "SetAsLastSibling": {
+     "params": [],
+     "returns": "boolean",
+     "desc": "移到同级末位"
+    },
+    "GetAnchoredPosition": {
+     "params": [],
+     "returns": "x, y",
+     "desc": "无父层级时，以画布左下为原点获取位置；存在父层级时，获取与父层级中心的相对偏移。"
+    },
+    "SetAnchoredPosition": {
+     "params": [
+      {
+       "name": "x"
+      },
+      {
+       "name": "y"
+      }
+     ],
+     "returns": "",
+     "desc": "无父层级时，以画布左下为原点设置位置；存在父层级时，设置与父层级中心的相对偏移。"
+    },
+    "GetSizeDelta": {
+     "params": [],
+     "returns": "x, y",
+     "desc": "获取大小"
+    },
+    "SetSizeDelta": {
+     "params": [
+      {
+       "name": "x"
+      },
+      {
+       "name": "y"
+      }
+     ],
+     "returns": "",
+     "desc": "设置大小"
+    },
+    "GetAnchorMin": {
+     "params": [],
+     "returns": "x, y",
+     "desc": "获取最小锚点"
+    },
+    "SetAnchorMin": {
+     "params": [
+      {
+       "name": "x"
+      },
+      {
+       "name": "y"
+      }
+     ],
+     "returns": "",
+     "desc": "设置最小锚点"
+    },
+    "GetAnchorMax": {
+     "params": [],
+     "returns": "x, y",
+     "desc": "获取最大锚点"
+    },
+    "SetAnchorMax": {
+     "params": [
+      {
+       "name": "x"
+      },
+      {
+       "name": "y"
+      }
+     ],
+     "returns": "",
+     "desc": "设置最大锚点"
+    },
+    "GetPivot": {
+     "params": [],
+     "returns": "x, y",
+     "desc": "获取中心"
+    },
+    "SetPivot": {
+     "params": [
+      {
+       "name": "x"
+      },
+      {
+       "name": "y"
+      }
+     ],
+     "returns": "",
+     "desc": "设置中心"
+    },
+    "GetLocalScale": {
+     "params": [],
+     "returns": "x, y, z",
+     "desc": "获取缩放"
+    },
+    "SetLocalScale": {
+     "params": [
+      {
+       "name": "x"
+      },
+      {
+       "name": "y"
+      },
+      {
+       "name": "z"
+      }
+     ],
+     "returns": "",
+     "desc": "设置缩放"
+    },
+    "GetLocalRotation": {
+     "params": [],
+     "returns": "x, y, z",
+     "desc": "获取旋转"
+    },
+    "SetLocalRotation": {
+     "params": [
+      {
+       "name": "x"
+      },
+      {
+       "name": "y"
+      },
+      {
+       "name": "z"
+      }
+     ],
+     "returns": "",
+     "desc": "设置旋转"
+    },
+    "GetScriptByPath": {
+     "params": [
+      {
+       "name": "scriptPath"
+      }
+     ],
+     "returns": "Script",
+     "desc": "按路径获取挂载脚本"
+    },
+    "GetScript": {
+     "params": [
+      {
+       "name": "scriptMappingId"
+      }
+     ],
+     "returns": "Script",
+     "desc": "按脚本映射ID获取脚本"
+    },
+    "GetScripts": {
+     "params": [],
+     "returns": "Script[]",
+     "desc": "获取控件上全部脚本"
+    },
+    "AddKeyEventListener": {
+     "params": [
+      {
+       "name": "eventType"
+      },
+      {
+       "name": "callback"
+      }
+     ],
+     "returns": "",
+     "desc": "注册指定按键事件监听；回调返回 boolean；移除单个监听时需保留该回调引用。同一个容器中，如果交互按键事件被lua回调响应，并标记为已处理，容器内的其他按键不会也响应此次按键事件"
+    },
+    "RemoveKeyEventListener": {
+     "params": [
+      {
+       "name": "eventType"
+      },
+      {
+       "name": "callback"
+      }
+     ],
+     "returns": "",
+     "desc": "移除指定按键事件和回调的监听；回调必须与注册时的引用相同"
+    },
+    "RemoveKeyEventListeners": {
+     "params": [
+      {
+       "name": "eventType"
+      }
+     ],
+     "returns": "",
+     "desc": "移除指定按键事件的全部监听"
+    },
+    "RemoveAllKeyEventListeners": {
+     "params": [],
+     "returns": "",
+     "desc": "移除全部按键事件监听"
+    },
+    "AddNavigationEventListener": {
+     "params": [
+      {
+       "name": "eventType"
+      },
+      {
+       "name": "callback"
+      }
+     ],
+     "returns": "",
+     "desc": "注册指定手柄导航事件监听"
+    },
+    "RemoveNavigationEventListener": {
+     "params": [
+      {
+       "name": "eventType"
+      },
+      {
+       "name": "callback"
+      }
+     ],
+     "returns": "",
+     "desc": "移除指定手柄导航事件和回调的监听"
+    },
+    "RemoveNavigationEventListeners": {
+     "params": [
+      {
+       "name": "eventType"
+      }
+     ],
+     "returns": "",
+     "desc": "移除指定手柄导航事件的全部监听"
+    },
+    "RemoveAllNavigationEventListeners": {
+     "params": [],
+     "returns": "",
+     "desc": "移除全部手柄导航事件监听"
+    },
+    "SetControllerNavigation": {
+     "params": [
+      {
+       "name": "navigationDir"
+      },
+      {
+       "name": "navigationMode"
+      },
+      {
+       "name": "navigationTarget"
+      }
+     ],
+     "returns": "",
+     "desc": "设置指定方向的导航模式和目标控件；目标可以为 nil"
+    },
+    "GetControllerNavigation": {
+     "params": [
+      {
+       "name": "navigationDir"
+      }
+     ],
+     "returns": "navigationMode, navigationTarget",
+     "desc": "获取指定方向的导航模式和目标控件"
+    }
+   }
+  },
+  "ClientUIImageControl": {
+   "fields": {
+    "imageSource": {
+     "type": "ImageSource",
+     "access": "r",
+     "desc": "图片来源"
+    },
+    "imageId": {
+     "type": "integer",
+     "access": "r",
+     "desc": "图片 ID"
+    },
+    "imageColor": {
+     "type": "ColorValue",
+     "access": "rw",
+     "tween": true,
+     "desc": "图片颜色、Tweenable"
+    },
+    "imageType": {
+     "type": "ImageType",
+     "access": "rw",
+     "desc": "基础或拉伸类型"
+    },
+    "enableMask": {
+     "type": "boolean",
+     "access": "rw",
+     "desc": "是否启用遮罩"
+    },
+    "enableSoftEdge": {
+     "type": "boolean",
+     "access": "rw",
+     "desc": "是否启用边缘羽化"
+    },
+    "softEdgeMode": {
+     "type": "ImageMaskSoftEdgeMode",
+     "access": "rw",
+     "desc": "边缘羽化模式"
+    },
+    "softEdgeWidthX": {
+     "type": "number",
+     "access": "rw",
+     "tween": true,
+     "desc": "水平边缘羽化宽度、Tweenable"
+    },
+    "softEdgeWidthY": {
+     "type": "number",
+     "access": "rw",
+     "tween": true,
+     "desc": "垂直边缘羽化宽度、Tweenable"
+    },
+    "horizontalSoftRange": {
+     "type": "number",
+     "access": "rw",
+     "tween": true,
+     "desc": "水平边缘羽化范围、Tweenable"
+    },
+    "verticalSoftRange": {
+     "type": "number",
+     "access": "rw",
+     "tween": true,
+     "desc": "垂直边缘羽化范围、Tweenable"
+    },
+    "reverseMaskArea": {
+     "type": "boolean",
+     "access": "rw",
+     "desc": "是否反转遮罩区域"
+    },
+    "fillType": {
+     "type": "ImageFillType",
+     "access": "rw",
+     "desc": "当前填充方式"
+    },
+    "fillHorizontalType": {
+     "type": "ImageFillHorizontalType",
+     "access": "rw",
+     "desc": "水平填充方向"
+    },
+    "fillVerticalType": {
+     "type": "ImageFillVerticalType",
+     "access": "rw",
+     "desc": "垂直填充方向"
+    },
+    "fillRadial90Type": {
+     "type": "ImageFillRadial90Type",
+     "access": "rw",
+     "desc": "90度环绕起点"
+    },
+    "fillRadialType": {
+     "type": "ImageFillRadialType",
+     "access": "rw",
+     "desc": "180度环绕和 360度环绕的起点"
+    },
+    "fillAmount": {
+     "type": "number",
+     "access": "rw",
+     "tween": true,
+     "desc": "进度"
+    }
+   },
+   "methods": {
+    "SetImage": {
+     "params": [
+      {
+       "name": "imageSource"
+      },
+      {
+       "name": "imageId"
+      }
+     ],
+     "returns": "",
+     "desc": "设置图片来源与图片 ID"
+    },
+    "SetSoftEdgeWidth": {
+     "params": [
+      {
+       "name": "widthX"
+      },
+      {
+       "name": "widthY"
+      }
+     ],
+     "returns": "",
+     "desc": "设置水平与垂直边缘羽化宽度"
+    },
+    "SetFillUnused": {
+     "params": [],
+     "returns": "",
+     "desc": "设置为不使用填充"
+    },
+    "SetFillHorizontal": {
+     "params": [
+      {
+       "name": "fillHorizontalType"
+      },
+      {
+       "name": "fillAmount"
+      }
+     ],
+     "returns": "",
+     "desc": "设置水平填充"
+    },
+    "SetFillVertical": {
+     "params": [
+      {
+       "name": "fillVerticalType"
+      },
+      {
+       "name": "fillAmount"
+      }
+     ],
+     "returns": "",
+     "desc": "设置垂直填充"
+    },
+    "SetFillRadial90": {
+     "params": [
+      {
+       "name": "fillRadial90Type"
+      },
+      {
+       "name": "fillAmount"
+      }
+     ],
+     "returns": "",
+     "desc": "设置 90度环绕填充"
+    },
+    "SetFillRadial180": {
+     "params": [
+      {
+       "name": "fillRadialType"
+      },
+      {
+       "name": "fillAmount"
+      }
+     ],
+     "returns": "",
+     "desc": "设置 180度环绕填充"
+    },
+    "SetFillRadial360": {
+     "params": [
+      {
+       "name": "fillRadialType"
+      },
+      {
+       "name": "fillAmount"
+      }
+     ],
+     "returns": "",
+     "desc": "设置 360度环绕填充"
+    }
+   }
+  },
+  "ClientUITextBoxControl": {
+   "fields": {
+    "text": {
+     "type": "string",
+     "access": "rw",
+     "desc": "显示文本"
+    },
+    "fontSize": {
+     "type": "integer",
+     "access": "rw",
+     "tween": true,
+     "desc": "字号，Tweenable"
+    },
+    "fontColor": {
+     "type": "ColorValue",
+     "access": "rw",
+     "tween": true,
+     "desc": "字色，Tweenable"
+    },
+    "bgColor": {
+     "type": "ColorValue",
+     "access": "rw",
+     "tween": true,
+     "desc": "背景色，Tweenable"
+    },
+    "enableOutline": {
+     "type": "boolean",
+     "access": "rw",
+     "desc": "是否启用描边"
+    },
+    "outlineColor": {
+     "type": "ColorValue",
+     "access": "rw",
+     "tween": true,
+     "desc": "描边色，Tweenable"
+    },
+    "horizontalAlignment": {
+     "type": "TextHorizontalAlignment",
+     "access": "rw",
+     "desc": "水平对齐"
+    },
+    "verticalAlignment": {
+     "type": "TextVerticalAlignment",
+     "access": "rw",
+     "desc": "垂直对齐"
+    },
+    "adaptiveFontSize": {
+     "type": "boolean",
+     "access": "rw",
+     "desc": "字号自适应"
+    },
+    "minimumFontSize": {
+     "type": "integer",
+     "access": "rw",
+     "tween": true,
+     "desc": "字号自适应的最小字号，Tweenable"
+    }
+   },
+   "methods": {}
+  },
+  "ClientUITextWindowControl": {
+   "fields": {
+    "interactable": {
+     "type": "boolean",
+     "access": "rw",
+     "desc": "是否可交互；与 showScrollBar 同时为 false 时，手柄无法滚动文本视窗"
+    },
+    "showScrollBar": {
+     "type": "boolean",
+     "access": "rw",
+     "desc": "是否显示滚动条"
+    },
+    "text": {
+     "type": "string",
+     "access": "rw",
+     "desc": "显示文本"
+    },
+    "fontSize": {
+     "type": "integer",
+     "access": "rw",
+     "tween": true,
+     "desc": "字号，Tweenable"
+    },
+    "fontColor": {
+     "type": "ColorValue",
+     "access": "rw",
+     "tween": true,
+     "desc": "字色，Tweenable"
+    },
+    "bgColor": {
+     "type": "ColorValue",
+     "access": "rw",
+     "tween": true,
+     "desc": "背景色，Tweenable"
+    },
+    "enableOutline": {
+     "type": "boolean",
+     "access": "rw",
+     "desc": "是否启用描边"
+    },
+    "outlineColor": {
+     "type": "ColorValue",
+     "access": "rw",
+     "tween": true,
+     "desc": "描边色，Tweenable"
+    },
+    "horizontalAlignment": {
+     "type": "TextHorizontalAlignment",
+     "access": "rw",
+     "desc": "水平对齐"
+    },
+    "verticalAlignment": {
+     "type": "TextVerticalAlignment",
+     "access": "rw",
+     "desc": "垂直对齐"
+    },
+    "adaptiveFontSize": {
+     "type": "boolean",
+     "access": "rw",
+     "desc": "字号自适应"
+    },
+    "minimumFontSize": {
+     "type": "integer",
+     "access": "rw",
+     "tween": true,
+     "desc": "字号自适应的最小字号，Tweenable"
+    }
+   },
+   "methods": {}
+  },
+  "ClientUIPresetButtonControl": {
+   "fields": {
+    "interactable": {
+     "type": "boolean",
+     "access": "rw",
+     "desc": "是否可交互"
+    },
+    "clickAudioId": {
+     "type": "integer",
+     "access": "rw",
+     "desc": "点击音效 ID"
+    },
+    "raycastTarget": {
+     "type": "boolean",
+     "access": "rw",
+     "desc": "可被光标射线检测"
+    }
+   },
+   "methods": {
+    "AddCursorEventListener": {
+     "params": [
+      {
+       "name": "eventType"
+      },
+      {
+       "name": "callback"
+      }
+     ],
+     "returns": "",
+     "desc": "注册指定光标事件监听；回调接收 CursorEventData"
+    },
+    "RemoveCursorEventListener": {
+     "params": [
+      {
+       "name": "eventType"
+      },
+      {
+       "name": "callback"
+      }
+     ],
+     "returns": "",
+     "desc": "移除指定光标事件和回调的监听"
+    },
+    "RemoveCursorEventListeners": {
+     "params": [
+      {
+       "name": "eventType"
+      }
+     ],
+     "returns": "",
+     "desc": "移除指定光标事件的全部监听"
+    },
+    "RemoveAllCursorEventListeners": {
+     "params": [],
+     "returns": "",
+     "desc": "移除全部光标事件监听"
+    },
+    "SimulateCursorClick": {
+     "params": [],
+     "returns": "",
+     "desc": "按顺序模拟 CursorDown、CursorUp 与 CursorClick"
+    }
+   }
+  },
+  "ClientUICursorEventAreaControl": {
+   "fields": {
+    "raycastTarget": {
+     "type": "boolean",
+     "access": "rw",
+     "desc": "可被光标射线检测"
+    }
+   },
+   "methods": {
+    "AddCursorEventListener": {
+     "params": [
+      {
+       "name": "eventType"
+      },
+      {
+       "name": "callback"
+      }
+     ],
+     "returns": "",
+     "desc": "注册指定光标事件监听；回调接收 CursorEventData"
+    },
+    "RemoveCursorEventListener": {
+     "params": [
+      {
+       "name": "eventType"
+      },
+      {
+       "name": "callback"
+      }
+     ],
+     "returns": "",
+     "desc": "移除指定光标事件和回调的监听"
+    },
+    "RemoveCursorEventListeners": {
+     "params": [
+      {
+       "name": "eventType"
+      }
+     ],
+     "returns": "",
+     "desc": "移除指定光标事件的全部监听"
+    },
+    "RemoveAllCursorEventListeners": {
+     "params": [],
+     "returns": "",
+     "desc": "移除全部光标事件监听"
+    },
+    "SimulateCursorClick": {
+     "params": [],
+     "returns": "",
+     "desc": "按顺序模拟 CursorDown、CursorUp 与 CursorClick"
+    }
+   }
+  },
+  "CursorEventData": {
+   "fields": {
+    "dragging": {
+     "type": "boolean",
+     "access": "r",
+     "desc": "当前是否在拖拽"
+    },
+    "touchId": {
+     "type": "integer",
+     "access": "r",
+     "desc": "触点 ID"
+    }
+   },
+   "methods": {
+    "GetUIPos": {
+     "params": [],
+     "returns": "x, y: number",
+     "desc": "以画布左下角为原点，获取当前屏幕 UI 坐标。坐标比例和布局坐标一致。"
+    },
+    "GetPressUIPos": {
+     "params": [],
+     "returns": "x, y: number",
+     "desc": "获取按下时的屏幕 UI 坐标"
+    },
+    "GetUIPosDelta": {
+     "params": [],
+     "returns": "x, y: number",
+     "desc": "获取本次事件的屏幕 UI 位移"
+    }
+   }
+  },
+  "ClientUIGridScrollerControl": {
+   "fields": {
+    "itemCount": {
+     "type": "integer",
+     "access": "r",
+     "desc": "列表项数量"
+    },
+    "itemPrefabIndex": {
+     "type": "integer",
+     "access": "rw",
+     "desc": "列表项控件模板索引"
+    },
+    "raycastTarget": {
+     "type": "boolean",
+     "access": "rw",
+     "desc": "可被光标射线检测"
+    },
+    "showScrollBar": {
+     "type": "boolean",
+     "access": "rw",
+     "desc": "是否显示滚动条"
+    },
+    "interactable": {
+     "type": "boolean",
+     "access": "rw",
+     "desc": "是否可交互"
+    },
+    "scrollDirection": {
+     "type": "ScrollDirection",
+     "access": "r",
+     "desc": "滚动方向"
+    },
+    "layoutConstraint": {
+     "type": "ScrollLayoutConstraint",
+     "access": "r",
+     "desc": "列表项布局约束"
+    },
+    "layoutConstraintFixedCount": {
+     "type": "number",
+     "access": "r",
+     "desc": "固定布局时每行或每列的列表项数量"
+    },
+    "scrollProgress": {
+     "type": "number",
+     "access": "rw",
+     "tween": true,
+     "desc": "滚动进度、Tweenable"
+    }
+   },
+   "methods": {
+    "RefreshItems": {
+     "params": [
+      {
+       "name": "itemCount"
+      },
+      {
+       "name": "refreshCallback"
+      }
+     ],
+     "returns": "",
+     "desc": "刷新列表项并逐项调用回调；刷新回调形式为 fun(control: ClientUIBaseControl, index: integer)，参数依次为当前列表项控件和列表项索引"
+    },
+    "GetItemIndex": {
+     "params": [
+      {
+       "name": "control"
+      }
+     ],
+     "returns": "integer",
+     "desc": "获取列表项控件的索引"
+    },
+    "GetItemSize": {
+     "params": [],
+     "returns": "x, y: number",
+     "desc": "获取列表项宽度与高度"
+    },
+    "GetItemSpacing": {
+     "params": [],
+     "returns": "x, y: number",
+     "desc": "获取列表项的水平与垂直间距"
+    },
+    "GetPadding": {
+     "params": [],
+     "returns": "top, bottom, left, right: number",
+     "desc": "获取内容区域的上、下、左、右内边距"
+    },
+    "ScrollToItemAt": {
+     "params": [
+      {
+       "name": "index"
+      },
+      {
+       "name": "scrollAlignType"
+      }
+     ],
+     "returns": "",
+     "desc": "滚动到索引为 index 的列表项，并按 scrollAlignType 对齐"
+    },
+    "GetContentLength": {
+     "params": [],
+     "returns": "number",
+     "desc": "获取滚动内容在滚动方向上的长度"
+    }
+   }
+  },
+  "ClientUIKeyHintControl": {
+   "fields": {
+    "keyboardKeyCode": {
+     "type": "KeyboardKeyCode",
+     "access": "rw",
+     "desc": "键鼠按键枚举值"
+    },
+    "controllerKeyCode": {
+     "type": "ControllerKeyCode",
+     "access": "rw",
+     "desc": "手柄按键枚举值"
+    }
+   },
+   "methods": {}
+  },
+  "ClientUIAnimationControl": {
+   "fields": {
+    "animationId": {
+     "type": "integer",
+     "access": "rw",
+     "desc": "动效 ID"
+    },
+    "playSoundEffect": {
+     "type": "boolean",
+     "access": "rw",
+     "desc": "是否播放动效音效"
+    },
+    "layer": {
+     "type": "UIAnimationLayer",
+     "access": "rw",
+     "desc": "动效层级"
+    }
+   },
+   "methods": {
+    "PlayAnimation": {
+     "params": [],
+     "returns": "",
+     "desc": "播放界面动效"
+    },
+    "StopAnimation": {
+     "params": [],
+     "returns": "",
+     "desc": "停止界面动效"
+    }
+   }
+  },
+  "ClientUIFullscreenAnimationControl": {
+   "fields": {
+    "animationId": {
+     "type": "integer",
+     "access": "rw",
+     "desc": "动效 ID"
+    },
+    "playSoundEffect": {
+     "type": "boolean",
+     "access": "rw",
+     "desc": "是否播放动效音效"
+    }
+   },
+   "methods": {}
+  },
+  "ClientUIContainerControl": {
+   "fields": {
+    "isolateNavigation": {
+     "type": "boolean",
+     "access": "rw",
+     "desc": "是否隔离手柄导航"
+    },
+    "disableKeyEventPassthrough": {
+     "type": "boolean",
+     "access": "rw",
+     "desc": "是否屏蔽按键事件穿透"
+    },
+    "disableCursorEventPassthrough": {
+     "type": "boolean",
+     "access": "rw",
+     "desc": "是否屏蔽区域内点击事件穿透"
+    },
+    "showCursor": {
+     "type": "boolean",
+     "access": "rw",
+     "desc": "是否显示常驻光标；CursorEvent相关方法都需设置该参数为真后才可正常使用"
+    }
+   },
+   "methods": {}
+  },
+  "ClientUIReferenceControl": {
+   "fields": {
+    "referencedPrefabIndex": {
+     "type": "integer",
+     "access": "r",
+     "desc": "引用控件模板索引"
+    }
+   },
+   "methods": {}
+  }
+ },
+ "controlTypes": [
+  "ClientUIImageControl",
+  "ClientUITextBoxControl",
+  "ClientUITextWindowControl",
+  "ClientUIPresetButtonControl",
+  "ClientUICursorEventAreaControl",
+  "ClientUIGridScrollerControl",
+  "ClientUIKeyHintControl",
+  "ClientUIAnimationControl",
+  "ClientUIFullscreenAnimationControl",
+  "ClientUIContainerControl",
+  "ClientUIReferenceControl"
+ ],
+ "enums": {
+  "EaseType": [
+   "Linear",
+   "InSine",
+   "OutSine",
+   "InOutSine",
+   "InQuad",
+   "OutQuad",
+   "InOutQuad",
+   "InCubic",
+   "OutCubic",
+   "InOutCubic",
+   "InQuart",
+   "OutQuart",
+   "InOutQuart",
+   "InQuint",
+   "OutQuint",
+   "InOutQuint",
+   "InExpo",
+   "OutExpo",
+   "InOutExpo",
+   "InCirc",
+   "OutCirc",
+   "InOutCirc",
+   "InBack",
+   "OutBack",
+   "InOutBack",
+   "InElastic",
+   "OutElastic",
+   "InOutElastic",
+   "InBounce",
+   "OutBounce",
+   "InOutBounce"
+  ],
+  "CustomVariableEntityType": [
+   "Level",
+   "PlayerSelf",
+   "AvatarSelf"
+  ],
+  "Device": [
+   "KeyboardAndMouse",
+   "Mobile",
+   "Controller",
+   "MobileController"
+  ],
+  "StageMode": [
+   "Beyond",
+   "Classic"
+  ],
+  "LanguageType": [
+   "LanguageNone",
+   "LanguageEng",
+   "LanguageChs",
+   "LanguageCht",
+   "LanguageFra",
+   "LanguageDeu",
+   "LanguageSpa",
+   "LanguagePor",
+   "LanguageRus",
+   "LanguageJpn",
+   "LanguageKor",
+   "LanguageTha",
+   "LanguageVie",
+   "LanguageInd",
+   "LanguageTur",
+   "LanguageIta"
+  ],
+  "ParamType": [
+   "Entity",
+   "EntityList",
+   "Int",
+   "IntList",
+   "Bool",
+   "BoolList",
+   "Float",
+   "FloatList",
+   "String",
+   "StringList",
+   "Vector3",
+   "Vector3List",
+   "Guid",
+   "GuidList",
+   "ConfigId",
+   "PrefabId",
+   "ConfigIdList",
+   "PrefabIdList"
+  ],
+  "CursorEventType": [
+   "CursorDown",
+   "CursorUp",
+   "CursorEnter",
+   "CursorExit",
+   "CursorDrag",
+   "CursorBeginDrag",
+   "CursorEndDrag",
+   "CursorClick"
+  ],
+  "ScrollDirection": [
+   "Horizontal",
+   "Vertical"
+  ],
+  "ScrollLayoutConstraint": [
+   "AutoWrap",
+   "Fixed"
+  ],
+  "ScrollAlignType": [
+   "Bottom",
+   "Center",
+   "Top"
+  ],
+  "ControllerNavigationDir": [
+   "Up",
+   "Down",
+   "Left",
+   "Right"
+  ],
+  "ControllerNavigationEventType": [
+   "Confirm",
+   "Cancel",
+   "Focus",
+   "LostFocus",
+   "RightStickUp",
+   "RightStickDown",
+   "RightStickRight",
+   "RightStickLeft",
+   "LeftStickUp",
+   "LeftStickDown",
+   "LeftStickRight",
+   "LeftStickLeft"
+  ],
+  "ControllerNavigationMode": [
+   "None",
+   "NearestControl",
+   "Specified"
+  ],
+  "TextHorizontalAlignment": [
+   "Left",
+   "Middle",
+   "Right"
+  ],
+  "TextVerticalAlignment": [
+   "Top",
+   "Middle",
+   "Bottom"
+  ],
+  "ImageType": [
+   "Basic",
+   "Stretch"
+  ],
+  "ImageSource": [
+   "StaticReference",
+   "Item",
+   "Equipment",
+   "Skill",
+   "UnitStatus",
+   "Faction",
+   "Currency",
+   "Prefab"
+  ],
+  "ImageFillType": [
+   "Unused",
+   "Horizontal",
+   "Vertical",
+   "Radial90",
+   "Radial180",
+   "Radial360"
+  ],
+  "ImageFillHorizontalType": [
+   "Left",
+   "Right"
+  ],
+  "ImageFillVerticalType": [
+   "Bottom",
+   "Top"
+  ],
+  "ImageFillRadial90Type": [
+   "BottomLeft",
+   "TopLeft",
+   "TopRight",
+   "BottomRight"
+  ],
+  "ImageFillRadialType": [
+   "Bottom",
+   "Left",
+   "Top",
+   "Right"
+  ],
+  "ImageMaskSoftEdgeMode": [
+   "Percentage",
+   "Pixel"
+  ],
+  "UIAnimationLayer": [
+   "AboveAllControls",
+   "BelowAllControls"
+  ],
+  "KeyboardKeyCode": [
+   "CraftspersonKey1",
+   "CraftspersonKey2",
+   "CraftspersonKey3",
+   "CraftspersonKey4",
+   "CraftspersonKey5",
+   "CraftspersonKey6",
+   "CraftspersonKey7",
+   "CraftspersonKey8",
+   "CraftspersonKey9",
+   "CraftspersonKey10",
+   "CraftspersonKey11",
+   "CraftspersonKey12",
+   "CraftspersonKey13",
+   "CraftspersonKey14",
+   "CraftspersonKey15",
+   "CraftspersonKey16",
+   "CraftspersonKey17",
+   "CraftspersonKey18",
+   "CraftspersonKey19",
+   "CraftspersonKey20",
+   "CraftspersonKey21",
+   "CraftspersonKey22",
+   "CraftspersonKey23",
+   "CraftspersonKey24",
+   "CraftspersonKey25",
+   "CraftspersonKey26",
+   "CraftspersonKey27",
+   "CraftspersonKey28",
+   "CraftspersonKey29",
+   "CraftspersonKey30",
+   "CraftspersonKey31",
+   "CraftspersonKey32",
+   "CraftspersonKey33",
+   "CraftspersonKey34",
+   "CraftspersonKey35",
+   "CraftspersonKey36",
+   "CraftspersonKey37",
+   "CraftspersonKey38",
+   "CraftspersonKey39",
+   "CraftspersonKey40",
+   "CraftspersonKey41",
+   "CraftspersonKey42",
+   "CraftspersonKey43",
+   "MoveForwardKey",
+   "MoveBackwardKey",
+   "MoveLeftKey",
+   "MoveRightKey",
+   "SwitchToWalkOrRunKey",
+   "SprintKey",
+   "JumpKey",
+   "DropKey",
+   "OpenShortcutWheelKey",
+   "InteractKey",
+   "NormalAttackKey",
+   "CharacterSkill1Key",
+   "CharacterSkill2Key",
+   "CharacterSkill3Key",
+   "CharacterSkill4Key",
+   "None"
+  ],
+  "ControllerKeyCode": [
+   "CraftspersonKey1",
+   "CraftspersonKey2",
+   "CraftspersonKey3",
+   "CraftspersonKey4",
+   "CraftspersonKey5",
+   "CraftspersonKey6",
+   "CraftspersonKey7",
+   "CraftspersonKey8",
+   "CraftspersonKey9",
+   "CraftspersonKey10",
+   "CraftspersonKey11",
+   "CraftspersonKey12",
+   "CraftspersonKey13",
+   "CraftspersonKey14",
+   "SprintKey",
+   "JumpKey",
+   "InteractKey",
+   "NormalAttackKey",
+   "CharacterSkill1Key",
+   "CharacterSkill2Key",
+   "CharacterSkill3Key",
+   "CharacterSkill4Key",
+   "MenuConfirmKey",
+   "MenuBackKey",
+   "None"
+  ],
+  "KeyEventType": [
+   "KeyboardCraftspersonKey1Down",
+   "KeyboardCraftspersonKey2Down",
+   "KeyboardCraftspersonKey3Down",
+   "KeyboardCraftspersonKey4Down",
+   "KeyboardCraftspersonKey5Down",
+   "KeyboardCraftspersonKey6Down",
+   "KeyboardCraftspersonKey7Down",
+   "KeyboardCraftspersonKey8Down",
+   "KeyboardCraftspersonKey9Down",
+   "KeyboardCraftspersonKey10Down",
+   "KeyboardCraftspersonKey11Down",
+   "KeyboardCraftspersonKey12Down",
+   "KeyboardCraftspersonKey13Down",
+   "KeyboardCraftspersonKey14Down",
+   "KeyboardCraftspersonKey15Down",
+   "KeyboardCraftspersonKey16Down",
+   "KeyboardCraftspersonKey17Down",
+   "KeyboardCraftspersonKey18Down",
+   "KeyboardCraftspersonKey19Down",
+   "KeyboardCraftspersonKey20Down",
+   "KeyboardCraftspersonKey21Down",
+   "KeyboardCraftspersonKey22Down",
+   "KeyboardCraftspersonKey23Down",
+   "KeyboardCraftspersonKey24Down",
+   "KeyboardCraftspersonKey25Down",
+   "KeyboardCraftspersonKey26Down",
+   "KeyboardCraftspersonKey27Down",
+   "KeyboardCraftspersonKey28Down",
+   "KeyboardCraftspersonKey29Down",
+   "KeyboardCraftspersonKey30Down",
+   "KeyboardCraftspersonKey31Down",
+   "KeyboardCraftspersonKey32Down",
+   "KeyboardCraftspersonKey33Down",
+   "KeyboardCraftspersonKey34Down",
+   "KeyboardCraftspersonKey35Down",
+   "KeyboardCraftspersonKey36Down",
+   "KeyboardCraftspersonKey37Down",
+   "KeyboardCraftspersonKey38Down",
+   "KeyboardCraftspersonKey39Down",
+   "KeyboardCraftspersonKey40Down",
+   "KeyboardCraftspersonKey41Down",
+   "KeyboardCraftspersonKey42Down",
+   "KeyboardCraftspersonKey43Down",
+   "KeyboardMoveForwardKeyDown",
+   "KeyboardMoveBackwardKeyDown",
+   "KeyboardMoveLeftKeyDown",
+   "KeyboardMoveRightKeyDown",
+   "KeyboardSwitchToWalkOrRunKeyDown",
+   "KeyboardSprintKeyDown",
+   "KeyboardJumpKeyDown",
+   "KeyboardDropKeyDown",
+   "KeyboardOpenShortcutWheelKeyDown",
+   "KeyboardInteractKeyDown",
+   "KeyboardNormalAttackKeyDown",
+   "KeyboardCharacterSkill1KeyDown",
+   "KeyboardCharacterSkill2KeyDown",
+   "KeyboardCharacterSkill3KeyDown",
+   "KeyboardCharacterSkill4KeyDown",
+   "KeyboardCraftspersonKey1Up",
+   "KeyboardCraftspersonKey2Up",
+   "KeyboardCraftspersonKey3Up",
+   "KeyboardCraftspersonKey4Up",
+   "KeyboardCraftspersonKey5Up",
+   "KeyboardCraftspersonKey6Up",
+   "KeyboardCraftspersonKey7Up",
+   "KeyboardCraftspersonKey8Up",
+   "KeyboardCraftspersonKey9Up",
+   "KeyboardCraftspersonKey10Up",
+   "KeyboardCraftspersonKey11Up",
+   "KeyboardCraftspersonKey12Up",
+   "KeyboardCraftspersonKey13Up",
+   "KeyboardCraftspersonKey14Up",
+   "KeyboardCraftspersonKey15Up",
+   "KeyboardCraftspersonKey16Up",
+   "KeyboardCraftspersonKey17Up",
+   "KeyboardCraftspersonKey18Up",
+   "KeyboardCraftspersonKey19Up",
+   "KeyboardCraftspersonKey20Up",
+   "KeyboardCraftspersonKey21Up",
+   "KeyboardCraftspersonKey22Up",
+   "KeyboardCraftspersonKey23Up",
+   "KeyboardCraftspersonKey24Up",
+   "KeyboardCraftspersonKey25Up",
+   "KeyboardCraftspersonKey26Up",
+   "KeyboardCraftspersonKey27Up",
+   "KeyboardCraftspersonKey28Up",
+   "KeyboardCraftspersonKey29Up",
+   "KeyboardCraftspersonKey30Up",
+   "KeyboardCraftspersonKey31Up",
+   "KeyboardCraftspersonKey32Up",
+   "KeyboardCraftspersonKey33Up",
+   "KeyboardCraftspersonKey34Up",
+   "KeyboardCraftspersonKey35Up",
+   "KeyboardCraftspersonKey36Up",
+   "KeyboardCraftspersonKey37Up",
+   "KeyboardCraftspersonKey38Up",
+   "KeyboardCraftspersonKey39Up",
+   "KeyboardCraftspersonKey40Up",
+   "KeyboardCraftspersonKey41Up",
+   "KeyboardCraftspersonKey42Up",
+   "KeyboardCraftspersonKey43Up",
+   "KeyboardMoveForwardKeyUp",
+   "KeyboardMoveBackwardKeyUp",
+   "KeyboardMoveLeftKeyUp",
+   "KeyboardMoveRightKeyUp",
+   "KeyboardSwitchToWalkOrRunKeyUp",
+   "KeyboardSprintKeyUp",
+   "KeyboardJumpKeyUp",
+   "KeyboardDropKeyUp",
+   "KeyboardOpenShortcutWheelKeyUp",
+   "KeyboardInteractKeyUp",
+   "KeyboardNormalAttackKeyUp",
+   "KeyboardCharacterSkill1KeyUp",
+   "KeyboardCharacterSkill2KeyUp",
+   "KeyboardCharacterSkill3KeyUp",
+   "KeyboardCharacterSkill4KeyUp",
+   "ControllerCraftspersonKey1Down",
+   "ControllerCraftspersonKey2Down",
+   "ControllerCraftspersonKey3Down",
+   "ControllerCraftspersonKey4Down",
+   "ControllerCraftspersonKey5Down",
+   "ControllerCraftspersonKey6Down",
+   "ControllerCraftspersonKey7Down",
+   "ControllerCraftspersonKey8Down",
+   "ControllerCraftspersonKey9Down",
+   "ControllerCraftspersonKey10Down",
+   "ControllerCraftspersonKey11Down",
+   "ControllerCraftspersonKey12Down",
+   "ControllerCraftspersonKey13Down",
+   "ControllerCraftspersonKey14Down",
+   "ControllerSprintKeyDown",
+   "ControllerJumpKeyDown",
+   "ControllerInteractKeyDown",
+   "ControllerNormalAttackKeyDown",
+   "ControllerCharacterSkill1KeyDown",
+   "ControllerCharacterSkill2KeyDown",
+   "ControllerCharacterSkill3KeyDown",
+   "ControllerCharacterSkill4KeyDown",
+   "ControllerMenuConfirmKeyDown",
+   "ControllerMenuBackKeyDown",
+   "ControllerCraftspersonKey1Up",
+   "ControllerCraftspersonKey2Up",
+   "ControllerCraftspersonKey3Up",
+   "ControllerCraftspersonKey4Up",
+   "ControllerCraftspersonKey5Up",
+   "ControllerCraftspersonKey6Up",
+   "ControllerCraftspersonKey7Up",
+   "ControllerCraftspersonKey8Up",
+   "ControllerCraftspersonKey9Up",
+   "ControllerCraftspersonKey10Up",
+   "ControllerCraftspersonKey11Up",
+   "ControllerCraftspersonKey12Up",
+   "ControllerCraftspersonKey13Up",
+   "ControllerCraftspersonKey14Up",
+   "ControllerSprintKeyUp",
+   "ControllerJumpKeyUp",
+   "ControllerInteractKeyUp",
+   "ControllerNormalAttackKeyUp",
+   "ControllerCharacterSkill1KeyUp",
+   "ControllerCharacterSkill2KeyUp",
+   "ControllerCharacterSkill3KeyUp",
+   "ControllerCharacterSkill4KeyUp",
+   "ControllerMenuConfirmKeyUp",
+   "ControllerMenuBackKeyUp"
+  ]
+ }
+}

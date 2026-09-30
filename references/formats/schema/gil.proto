@@ -1,0 +1,130 @@
+syntax = "proto3";
+
+// ========================================================================
+// gil.proto —— 关卡存档（.gil）载荷的 schema（本技能自有，部分字段命名参考第三方，见下）
+//
+// 证据等级（写在每条注释里）
+//   【官方示例】 用 references/samples/ 的 48 个官方 .gil 逐个核对过
+//   【第三方】 命名/含义来自 script-1024/genshin-miliastra-file-format 的 docs/zh/内容负载/GIL.md（MIT，
+//                 见 THIRD_PARTY_LICENSES.md），本技能只核对过其字段号与样本的对应
+//   【逆向推断】 本技能从样本数据规律推断，未在真机确认
+//
+// 约定
+//   - 不透明（Opaque）= 该字段的内部结构本技能未逐项解析；解码时其内容进 _u（猜测模式下是结构化的 msg），
+//     编码时原样写回，所以「读、改别处、写回」不会损坏它。
+//   - 只有确实核对过的字段才在这里声明类型；没声明的字段号一律走 _u。
+//   - .gil 的所有内嵌消息里，游戏写出的 protobuf 是规范的：字段号升序、不写默认值（【官方示例】23 万个消息实测）。
+// ========================================================================
+
+message Opaque {}
+
+// ------------------------------------------------------------------------
+// 顶层
+// ------------------------------------------------------------------------
+message GilFile {
+  // 字段 1：仅新版编辑器（样本里 7.1.0）写入，值形如 0x40000004；含义未确认
+  string level_name = 2;                    // 【官方示例】关卡名
+  Opaque field_3 = 3;                       // 【官方示例】恒为空消息，用途未知
+  Opaque components = 4;                    // 【第三方】玩家/角色/元件模板；【官方示例】{ repeated Item items = 1 }，Item.f1 是模板 GUID
+  Opaque entities = 5;                      // 【第三方】关卡内布设的实体
+  CategorySection categories = 6;           // 【官方示例】分类页签（见下）
+  Opaque terrains = 7;                      // 【第三方】地形
+  Opaque field_8 = 8;                       // 【第三方】「似乎也是元件数据」
+  UiSection ui = 9;                         // 【官方示例】界面控件（见下）
+  NodeGraphSection node_graphs = 10;        // 【官方示例】节点图相关资产（见下）
+  Opaque level_settings = 11;               // 【第三方】关卡设置（阵营、预设点等）
+  // 12/14/15/16/17/18/21/22/23/25/27/29/30~33/35~38：第三方文档里也大多标为「未知/似乎是…」，本技能不解析
+  string engine_version = 43;               // 【官方示例】编辑器版本号，如 "6.2.54"、"7.1.0"
+  ClientScriptSection client_scripts = 50;  // 【官方示例】客户端脚本（Lua），7.x 才有
+}
+
+// ------------------------------------------------------------------------
+// 分类页签（顶层字段 6）
+// 【官方示例】每类资产各有一棵页签树，默认页签叫「未分类页签」；资产登记在页签里。
+//   items[i].category_kind 例：69 = 客户端脚本类（样本 客户端脚本.gil）
+// ------------------------------------------------------------------------
+message CategorySection {
+  repeated CategoryTree trees = 1;
+}
+message CategoryTree {
+  uint32 category_kind = 1;                 // 【官方示例】哪一类资产的页签树
+  CategoryNode root = 2;                    // 【官方示例】{ name:"root", kind:1 }
+  CategoryNode default_tab = 3;             // 【官方示例】{ name:"未分类页签", kind:2, assets[] }
+}
+message CategoryNode {
+  string name = 1;
+  uint32 kind = 3;                          // root=1，页签=2
+  repeated CategoryAssetRef assets = 5;     // 登记在此页签下的资产
+}
+message CategoryAssetRef {
+  uint32 asset_kind = 1;                    // 【官方示例】客户端脚本 = 7900
+  uint32 asset_guid = 2;
+}
+
+// ------------------------------------------------------------------------
+// 界面控件（顶层字段 9）
+// 命名参考 script-1024 的 ui_control_group.proto；结构与控件类型的判别方法为本技能自己从样本归纳
+// ------------------------------------------------------------------------
+message UiSection {
+  repeated uint32 roots = 501;              // 【官方示例】打包的 GUID 列表（顶层布局的 GUID）
+  repeated UiNode nodes = 502;              // 【官方示例】控件节点，一个节点一条
+  uint32 field_503 = 503;                   // 少数文件才有，含义未知
+}
+message UiNode {
+  uint32 guid = 501;                        // 【官方示例】节点 GUID（0x40000001 起递增）
+  repeated UiNodeInfo info = 502;           // 【官方示例】节点信息（是自定义控件还是内置布局等）
+  repeated uint32 children = 503;           // 【官方示例】打包的子节点 GUID，顺序 = 兄弟顺序
+  uint32 parent = 504;                      // 【官方示例】父节点 GUID，0/缺省 = 根
+  repeated UiSlot slots = 505;              // 【官方示例】数据槽：名字、变换、类型专属数据、脚本绑定……
+}
+message UiNodeInfo {
+  Opaque payload_11 = 11;
+  Opaque payload_14 = 14;
+  Opaque payload_15 = 15;
+  Opaque payload_16 = 16;
+  Opaque payload_17 = 17;
+  uint32 slot_id = 501;
+  uint32 slot_type = 502;
+  Opaque detail = 503;
+}
+message UiSlot {
+  UiSlotName name = 12;                     // 【官方示例】槽 (2,15)：节点名字（Lua 里 GetChild 用的就是它）
+  uint32 slot_id = 501;                     // 槽标识
+  uint32 slot_type = 502;                   // 槽类型；(slot_id,slot_type) 的组合决定这个槽存的是什么
+  // 其余载荷字段（11 变换、13、14、73/74/77/78/83/84 …）保持不透明，走 _u
+}
+message UiSlotName {
+  string text = 501;
+}
+
+// ------------------------------------------------------------------------
+// 节点图（顶层字段 10）
+// 【官方示例】10.1[] 每张节点图一条，形态 = NodeGraphContainer.InnerWrapper（见 gia.proto）；
+//   10.2[] 复合节点/信号/结构体的「接口」；10.5 信号表；10.6[] 结构体定义。
+// ------------------------------------------------------------------------
+message NodeGraphSection {
+  repeated NodeGraphContainer.InnerWrapper graphs = 1;
+  repeated Opaque interfaces = 2;           // 【官方示例】复合节点/信号/结构体节点的接口（≈ gia.proto 的 NodeInterface）
+  Opaque folders = 3;                       // 【官方示例】{ f1:数字, f2:{f1:"复合节点"} } 一类文件夹名
+  Opaque signals = 5;                       // 【官方示例】信号表
+  repeated Opaque structs = 6;              // 【官方示例】结构体定义
+  uint32 field_7 = 7;                       // 【官方示例】varint，25 个文件里出现，含义未知
+}
+
+// ------------------------------------------------------------------------
+// 客户端脚本（顶层字段 50）—— Lua 源码以明文存放
+// 【官方示例】样本 客户端脚本.gil（3.21 教程，版本 7.1.0）：
+//   50.1 = { guid:0x40000002, name:"收集圆圈", file_name:"main.lua", source:<Lua 源码> }，50.2 = 1
+//   脚本被引用于：分类页签（6，类型码 7900）与界面控件槽（9，槽 74.502.1.1 = 脚本 GUID）
+// 【逆向推断】多个脚本时 50.1 是否重复出现、字段 4 是什么——样本里只有一个脚本，未能核对
+// ------------------------------------------------------------------------
+message ClientScriptSection {
+  repeated ClientScript scripts = 1;
+  uint32 field_2 = 2;                       // 样本里恒为 1
+}
+message ClientScript {
+  uint32 guid = 1;
+  string name = 2;                          // 脚本资产名（编辑器里看到的名字）
+  string file_name = 3;                     // 例 "main.lua"
+  string source = 5;                        // Lua 源码
+}
