@@ -36,6 +36,8 @@
 | **3.6** | **`references/formats/lua-sim.md`** | **只在要离线跑 / 调试客户端 Lua 脚本时读**：`smoke` / `test` 怎么用、诊断码与证据标签怎么读、保真度表（每条行为的依据）、完整示例 `references/examples/circle-challenge/` |
 | 4 | `references/corpus/` | 341 篇官方文档镜像：要原文措辞、操作步骤、节点语义时回语料 |
 
+遇到 **怪物不走桥、卡在平台边缘、追击或巡逻异常**，或正在生成/修改 GIL 场景时，先读 [场景与寻路排障](references/scene-navigation-playbook.md)。先核对静态标记、碰撞与导航烘焙，再判断是否需要改移动逻辑；离线导出成功不能证明原生寻路可用。
+
 **不要遍历语料。** 先过路由表；找不到再按标题搜文件名（方法见路由表 §0）。
 **也不要以为镜像就是全部**——镜像停在某个 commit 上，新条目与漏抓条目都在 `references/live/`。
 

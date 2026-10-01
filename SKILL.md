@@ -1,6 +1,7 @@
 ---
 name: miliastra-ugc
-description: Use when working on 千星奇域 / 千星沙箱（原神 UGC）——关卡与地形搭建、实体与元件、战斗与技能、单位状态、道具经济、界面控件、服务端节点图、外围系统、存档与发布，或其中任何一处「配好了但没反应」的排障。Also use for client-side Lua UI scripts (widget tree, lifecycle, canvas readiness, Tween, cursor/key input, server signals) and when such logic is silently dead: no error in the log, but the button, text, animation, or signal never fires. Also use when reading, generating or editing .gia / .gil files (asset packages and level saves): put a Lua script into a level, check Lua widget names against the level's control tree, extract or generate server node graphs as .gia, diff two exports, or turn a save into editable JSON. Also use to run, smoke-test or debug a client Lua script offline with the bundled Lua 5.3 simulator (lint, whole-round run with auto-clicks, scenario tests) when there is no game to try it in.
+description: >-
+  Use when working on 千星奇域 / 千星沙箱（原神 UGC）——关卡与地形搭建、实体与元件、战斗与技能、单位状态、道具经济、界面控件、服务端节点图、外围系统、存档与发布，或其中任何一处「配好了但没反应」的排障。Also use for client-side Lua UI scripts (widget tree, lifecycle, canvas readiness, Tween, cursor/key input, server signals) and when such logic is silently dead: no error in the log, but the button, text, animation, or signal never fires. Also use when reading, generating or editing .gia / .gil files (asset packages and level saves): put a Lua script into a level, check Lua widget names against the level's control tree, extract or generate server node graphs as .gia, diff two exports, or turn a save into editable JSON. Also use to run, smoke-test or debug a client Lua script offline with the bundled Lua 5.3 simulator (lint, whole-round run with auto-clicks, scenario tests) when there is no game to try it in.
 ---
 
 # 千星奇域 UGC 创作（Claude / DSH 适配层）
@@ -16,6 +17,7 @@ description: Use when working on 千星奇域 / 千星沙箱（原神 UGC）—�
 | 你要做的 | 读什么 |
 |---|---|
 | 任何事的第一站 | `AGENTS.md`（规则 + 域划分 + 交付要求） |
+| 怪物不走桥、平台边缘停滞、生成或修改 GIL 场景 | `references/scene-navigation-playbook.md`（场景类型、碰撞、导航烘焙与过桥验证） |
 | 找某个主题在语料里的位置 | `references/index.md`（全平台路由表，先学它的 §0） |
 | **官方正文之外的补充**（含官方完整示例代码） | `references/index.md` §1.6 → `references/live/` |
 | 写/审客户端 Lua UI 脚本 | `references/lua-ui-playbook.md` + `references/api/*` |
