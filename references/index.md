@@ -196,6 +196,8 @@ node scripts/fetch-official-doc.mjs <条目id> --section faq     # FAQ
 
 ## 4. 界面控件
 
+**图片图元拟合 / 图元优化 / 图片转 Lua 绘制**：先读 [primitive-ui-playbook.md](primitive-ui-playbook.md)。入口是第三方 `1475505/Miliastra-toolbox-primitive-shape`，覆盖拟合参数、图元预算、Lua 导出与挂载、坐标与层序保留及初始化检验。
+
 **落点**：`official/guide/` 的「界面控件系统」节（控件类型逐个有独立条目）+ 教程 `2.6界面控件` 与「玩法整合：界面控件」（按 §0 手段②搜标题）。
 
 | 你要找 | 搜这些词 |

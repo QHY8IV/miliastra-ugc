@@ -21,6 +21,8 @@ description: >-
 | 找某个主题在语料里的位置 | `references/index.md`（全平台路由表，先学它的 §0） |
 | **官方正文之外的补充**（含官方完整示例代码） | `references/index.md` §1.6 → `references/live/` |
 | 写/审客户端 Lua UI 脚本 | `references/lua-ui-playbook.md` + `references/api/*` |
+| **图片拟合成图元，用 Lua 绘制；减少图元/控件数量、优化画质与初始化** | **`references/primitive-ui-playbook.md`**（GitHub 项目、拟合参数、Lua 导出与挂载、回归检验） |
+| **图元项目的性能体检**（矩形还能不能更少、这一帧有多少图元是白画的、逐帧开销花在哪） | **`references/primitive-ui-playbook.md`** §6–8 + 工具 `node scripts/primitive-budget.mjs --selftest`（`cover` / `frame` 两个模式，零依赖） |
 | **离线跑 / 冒烟 / 场景测试客户端 Lua**（没有真机时；语法、拼写、控件名、补间、点击、整数浮点） | **`references/formats/lua-sim.md`**（工具：`node scripts/sim-lua.mjs --help`；完整示例 `references/examples/circle-challenge/`） |
 | **读/写 `.gil` / `.gia` 存档文件**（Lua 写进关卡、生成节点图、控件名核对、diff） | **`references/formats/README.md`**（工具：`node scripts/gi.mjs --help`） |
 | 写一张服务器节点图（生成 `.gia`） | `references/formats/node-graph.md`（图规格语法 + `gi.mjs nodes find` 查节点） |
