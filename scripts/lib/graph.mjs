@@ -313,6 +313,11 @@ export function compileGraph(spec, table, opts = {}) {
       variant = chooseVariant(node, bind);
       if (!variant) { err(path, `"${node.zh}" 没有 T=${JSON.stringify(bind)} 的具体版本`); return; }
     } else if (ns.T != null) warnings.push(`${path}：节点 "${node.zh}" 不是泛型节点，忽略 T`);
+    // 信号节点：本工具不写 signal_version / 信号引用，生成出来是「没绑定信号」的节点。
+    // 结构合法（所以不报 error，raw 透传也走这条路），但游戏里永远不会触发——必须提示。
+    if (node.ident && (node.ident.startsWith('Trigger.Signal.') || node.ident.startsWith('Execution.Signal.'))) {
+      warnings.push(`${path}：信号节点「${node.zh}」没有信号绑定（本工具不写 signal_version，见 references/formats/node-graph.md §7）——导入后要在编辑器里手动选信号；要保留原绑定，请先导出含该节点的 .gia，再用 raw 透传`);
+    }
     infos.set(ns.id, { idx: wantIdx.get(ns), node, variant, spec: ns, path, pins: new Map() });
   });
   if (problems.length) throw new GraphError(problems);

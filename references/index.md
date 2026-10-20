@@ -215,6 +215,10 @@ node scripts/fetch-official-doc.mjs <条目id> --section faq     # FAQ
 **但可以生成节点图 `.gia` 文件让你导入**（服务器 实体/状态/职业/道具 图）——图规格与节点表用法见 §1.7 的 `formats/node-graph.md`；
 用 `node scripts/gi.mjs nodes find <关键字>` 可以直接按中文名查节点、引脚与泛型取值。
 
+**要真的让 AI 写一张图**（从零生成 / 改已有图 / 验收 / 交付）：先读 [服务器节点图作业说明](node-graph-playbook.md)。
+官方原文「可通过节点图外部资产进行服务器节点图的导入」在 `official/guide/mho777i0ga90_千星沙箱.md`；
+但**导入动作本身尚未真机验证**，且**信号节点生成后不带信号绑定**（工具会提示，见 playbook §3）。
+
 | 你要找 | 搜这些词 |
 |---|---|
 | 概念、引脚、执行流/运算流 | `基础概念` `节点图` |
