@@ -46,6 +46,7 @@
 | `render.lua` | 千星奇域渲染器：p64 流式建立（不查表、不做扫描推演、不建中间数组）；大块优先；`FRAME_BUDGET` 分帧；**隐藏分组建立、建完每帧显示一组**（`GROUP_HIDE` / `GROUPS`，依据第三方实测：可见 15~18 µs/控件/帧，隐藏约 1.7 µs）；重建复用控件；建完关闭 `OnUpdate`；可选 `PRESET_TEMPLATE` |
 | `layered.mjs` | 分层重长：允许控件重叠，同 MAE 下少用控件（插画 4%～20%，像素画无损 36%～42%）。`compress.py --layered` / `estimate.py --layered` 调用。`--weights` 给出逐像素重要度时，底层铺满与逐层生长都改用加权标准差（`σw` 只统计**露出来**的像素） |
 | `shapes.mjs` `shapes-core.mjs` `shapes-refine.mjs` `shapes-tiles.mjs` `shapes-worker.mjs` `preview.mjs` `make-calibration.mjs` | 在分层矩形上加旋转矩形 / 椭圆（可选三角形 / 圆环 / 半透明 / 软边羽化渐变；软边走 SHPV = 3、19 字符）。按覆盖率混合模型做率失真替换 + 精修（颜色、几何、矩形边、修剪），多线程搜索；同 MAE 少约 40% 控件；只支持脚本版 `.gil`。`preview.mjs` 出带形状的预期效果 PNG（纯 Node）。`shapes-core.mjs` 是覆盖率光栅化与搜索，`shapes-refine.mjs` 是像素堆栈与精修（修剪 / 矩形边 / 几何 / 颜色，主线程与工作线程共用），`shapes-tiles.mjs` 是分块并行精修（`--no-parallel-refine` 关闭）；1000 px 的构建从 117 分钟降到约 12 分钟，见 playbook §2.19 |
+| `shapes-gpu.mjs` `gpu_search_server.py` `gpu_search_kernels.py` | **GPU 形状搜索（`compress.py --gpu`，实验性）**：把 `searchSeed` 的「打分 + 爬山」搬到 GPU（Triton 内核；`shapes.mjs` 起 Python 子进程，经 stdin / stdout 二进制帧通信，`shapes-gpu.mjs` 是 Node 端客户端，负责状态增量同步与批量搜索）。1000 px 完整构建 706 s → 448 s，形状搜索 414 s → 约 56 s，画质持平；起不来自动退回 CPU 线程池。依赖 PyTorch（CUDA）+ Triton（Windows：`pip install triton-windows`），第一次要编译内核（约 1 分钟）。`check.mjs --selftest --gpu` 带 GPU 自检。详见 playbook §2.19 |
 | `spot-fit.mjs` | 「**先铺光斑**」：先用不透明椭圆（kind 1）铺一层低频大色斑打底，再由色块层补残差。光栅化复用 `shapes-core` 的 `coverageInto`（每个半径真跑一次、之后按整数偏移平移复用）。同 MAE 下省控件依图而定：平滑插画 15.8%～29.2%，细节多的插画 5.1%～5.7%。2026-10-20 提速（评估封顶 + 惰性候选表 + 抽样精搜）：1000 px 从 34 分钟到约 1.2 分钟，光斑层 MAE 持平（`--eval-cap` / `--exhaustive` / `--no-lazy` / `--refresh` / `--fine-topk`，见 playbook §2.19） |
 | `snap.py` `covmodel.py` `snap-modelcheck.py` | **斜边补条**：在已有的 `.lua` 上，沿「两侧平坦、有明确色差」的斜边补细长旋转矩形（9～13 px 长、1～4 px 深），把矩形拼出来的台阶换成一条直边。是否落地**只看实测 L1**（`covmodel.py` 的覆盖率模型与 `shapes-core` 逐像素对得上，`snap-modelcheck.py` 是这条对拍的回归测试）。三种模式：`trim`（单侧修剪，只求更好）/ `ridge`（骑线上拉直细线）/ `pair`（两侧成对铺成直边，会牺牲 L1）。详见 playbook §2.11 |
 | `to-gia.mjs` `gia_crosscheck.py` `blocks.mjs` | 块数据 → 图片素材组 `.gia`。骨架取自 1475505/Miliastra-toolbox-primitive-shape（MIT）；交叉核对脚本调用该项目的 MIT 读取器；`blocks.mjs` 是共用的数据解码 |
@@ -69,7 +70,7 @@ python scripts/rect-merge/compress.py --input 图.png --output focus.lua --std 3
 python scripts/rect-merge/compress.py --input 图.png --output rot.lua --std 3 --size 300x300 --shapes --shape-prefer-rotation 8   # 旋转图形优先（斜边台阶；--preset best 已默认 =8）
 python scripts/rect-merge/compress.py --input 图.png --output out.lua --std 3 --size 300x300 --layered   # 分层重长
 python scripts/rect-merge/compress.py --input 图.png --output out.lua --std 3.6 --size 500x500 --preset best   # ★推荐（36 号关卡真机通过）：先铺 150 个光斑 + 椭圆 / 旋转矩形 / 三角形 / 圆环 + 半透明，强度 0.6（500×500 约 18 分钟，约 4 万控件；控件数由 --std 与 --shape-strength 调，要 ≤ 4.0 万）
-python scripts/rect-merge/compress.py --input 图.png --output out1000.lua --std 8.4 --size 1000x1000 --preset best --shape-strength 0.6 --shape-passes 4   # ★现在的推荐：画布 1000 + 用满预算 + 多搜一遍（74 号真机通过，39,380 控件；约 20 分钟；强度 0.9 / 3 遍 = 63 号，28k 控件、约 12 分钟；换图要把强度标定到 ≤ 4.08 万控件；.gil 用 to-gil.mjs --unit 1，verify-gil.mjs 同样传 --unit 1）
+python scripts/rect-merge/compress.py --input 图.png --output out1000.lua --std 8.4 --size 1000x1000 --preset best --shape-strength 0.6 --shape-passes 4   # ★现在的推荐（加 --gpu 可把构建从约 12 分钟缩到约 7.5 分钟，见 playbook §2.19）：画布 1000 + 用满预算 + 多搜一遍（74 号真机通过，39,380 控件；约 20 分钟；强度 0.9 / 3 遍 = 63 号，28k 控件、约 12 分钟；换图要把强度标定到 ≤ 4.08 万控件；.gil 用 to-gil.mjs --unit 1，verify-gil.mjs 同样传 --unit 1）
 python scripts/rect-merge/compress.py --input 图.png --output out800.lua --std 6.72 --size 800x800 --preset best --shape-strength 0.9   # 画布密度 800（64 号真机通过；提速前约 60 分钟，提速后没单独计时；--unit 1.25；见 playbook §2.18）
 python scripts/rect-merge/compress.py --input 图.png --output out.lua --std 6 --size 360x203 --spotted      # 只先铺光斑（默认 150 个，隐含 --shapes）
 node scripts/rect-merge/spot-fit.mjs --selftest        # 光斑光栅化等价性自检
@@ -77,7 +78,7 @@ python scripts/rect-merge/snap-modelcheck.py           # 补条的覆盖率模�
 python scripts/rect-merge/snap.py 基底.lua 输出.lua --img 图.png --render 当前渲染.png --mode trim --max-strips 1200   # 斜边补条（只落在实测变好的位置）
 ```
 
-依赖：Python 3 + Pillow + numpy（压缩端）；Node ≥ 22（检查端，零第三方依赖）。
+依赖：Python 3 + Pillow + numpy（压缩端）；Node ≥ 22（检查端，零第三方依赖）。**可选**：`--gpu` 需要 PyTorch（CUDA 版）+ Triton（Windows：`pip install triton-windows`，Linux：`pip install triton`），没有就自动用 CPU。
 
 ## 多档比较（原来的 `pack_modes.py` 那条路已移出）
 

@@ -24,5 +24,6 @@ parentPort.on('message', (m) => {
     parentPort.postMessage({ id: m.id, res }, transfer);
     return;
   }
+  if (m.type === 'starts') { parentPort.postMessage({ id: m.id, out: m.seeds.map((s) => ({ i: s.i, st: search.startsFor(s) })) }); return; }
   parentPort.postMessage({ id: m.id, out: m.seeds.map((s) => ({ i: s.i, cand: search.searchSeed(s) })) });
 });

@@ -374,6 +374,25 @@ export function makeSearch(env) {
     return best < 0 ? { kind, q: v, j: best, rb } : null;
   }
 
+  /** GPU 搜索用：只做 searchSeed 的前半（initFromRegion + initsFor），返回 { rb, starts: [{ kind, v }] }（顺序同 searchSeed：
+   *  先按 kinds 的顺序，再按各种类的初始参数，最后按不透明度起点）；打分、挑起点、爬山都在 GPU 上（gpu_search_server.py）。 */
+  function startsFor(seed) {
+    let px = seed.px;
+    if (!px) {
+      const [x0, y0, x1, y1] = seed.bb; px = new Int32Array((x1 - x0 + 1) * (y1 - y0 + 1)); let k = 0;
+      for (let yy = y0; yy <= y1; yy++) for (let xx = x0; xx <= x1; xx++) px[k++] = yy * W + xx;
+    }
+    const init = initFromRegion({ col: seed.col, bb: seed.bb, px });
+    const tr0 = init.sxx + init.syy;
+    const rb = preferRot * (tr0 > 1e-9 ? Math.min(1, Math.abs(2 * init.sxy) / tr0) : 0);
+    const starts = [];
+    for (const name of kinds) {
+      const kind = KIND_BY_NAME[name];
+      for (const st of initsFor(kind, init)) for (const a0 of (alphaOn ? [AQ_MAX, 14] : [AQ_MAX])) { const v = st.slice(0, 6); v[5] = a0; starts.push({ kind, v }); }
+    }
+    return { rb, starts };
+  }
+
   /** 一个种子 → 最好的候选或 null。seed：{ col, bb, px }（px 为空时按 bb 的整数矩形展开）。
    *  每种形状先对所有初始参数（三角形的 4 个朝向、不透明 / 半透明两种起点）各打一次分，只从最好的 1 个（三角形 2 个）开始爬山，省时间。 */
   function searchSeed(seed) {
@@ -402,5 +421,5 @@ export function makeSearch(env) {
     }
     return best;
   }
-  return { searchSeed, scratch, meanColor, softColor };
+  return { searchSeed, startsFor, scratch, meanColor, softColor, dbg: { scorer, initFromRegion, initsFor, proxyScore } };
 }

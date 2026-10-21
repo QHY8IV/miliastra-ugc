@@ -891,6 +891,27 @@ async function parallelRefineCheck() {
   ]);
 }
 
+/** GPU 搜索自检（--selftest --gpu 才跑；需要 PyTorch(CUDA) + Triton，第一次要编译内核约 1 分钟）：
+ *  GPU 实际处理了种子（stats.gpuSeeds > 0），结果与 CPU 线程池等价（MAE / 控件数差 ≤ 4%），收尾自检 0 个像素不符。 */
+async function gpuSearchCheck(py) {
+  const S = 256, raw = new Uint8Array(S * S * 3);
+  for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
+    const o = (y * S + x) * 3, inC = (x - 90) ** 2 + (y - 100) ** 2 < 55 * 55, inD = Math.abs(x - y - 20) < 14;
+    raw[o] = inC ? 240 : inD ? 30 : (x * 255 / S) | 0; raw[o + 1] = inC ? 60 : inD ? 200 : (y * 255 / S) | 0; raw[o + 2] = inC ? 40 : inD ? 120 : 128 + 60 * Math.sin(x / 13) * Math.cos(y / 19);
+  }
+  const T = 3, base = layered(raw, S, S, T);
+  const opts = { strength: 0.9, passes: 2, kinds: ['ellipse', 'rotrect', 'triangle', 'ring'], preferRot: 8, threads: 4 };
+  const cpu = await fitShapes(raw, S, S, T, base.rects, { ...opts });
+  const gpu = await fitShapes(raw, S, S, T, base.rects, { ...opts, gpu: true, gpuPython: py });
+  const ctl = (r) => r.rects.length + r.shapes.length;
+  return report('== GPU 形状搜索（gpu_search_server.py，shapes-gpu.mjs）', [
+    ['GPU 真的处理了种子（没有悄悄退回 CPU）', gpu.stats.gpuSeeds > 0, `GPU 处理 ${gpu.stats.gpuSeeds} 个种子`],
+    ['收尾自检：缓存误差与堆栈重算一致（0 个像素不符）', gpu.stats.stackMismatch === 0, `不符 ${gpu.stats.stackMismatch}`],
+    ['GPU 的 MAE 与 CPU 线程池相差 ≤ 4%', Math.abs(gpu.stats.mae - cpu.stats.mae) <= 0.04 * cpu.stats.mae, `GPU ${gpu.stats.mae.toFixed(3)} / CPU ${cpu.stats.mae.toFixed(3)}`],
+    ['GPU 的控件数与 CPU 线程池相差 ≤ 4%', Math.abs(ctl(gpu) - ctl(cpu)) <= 0.04 * ctl(cpu), `GPU ${ctl(gpu)} / CPU ${ctl(cpu)}`],
+  ]);
+}
+
 function planCheck() {  const r = spawnSync(process.execPath, [path.join(HERE, 'plan.mjs'), '--selftest'], { encoding: 'utf8' });
   const lines = (r.stdout || '').trim().split('\n');
   return report('== plan.mjs（容量与建立路线决策）', [
@@ -976,6 +997,8 @@ open(sys.argv[2], 'wb').write(img.tobytes())
   ok = planCheck() && ok;
   ok = coverageRefCheck() && ok;
   ok = await parallelRefineCheck() && ok;
+  if (process.argv.includes('--gpu')) ok = await gpuSearchCheck(py) && ok;
+  else console.log('\n== GPU 形状搜索：未检查（加 --gpu 才跑；需要 PyTorch(CUDA) + Triton）');
   ok = await visualBudgetChecks(py, env, png, tmp) && ok;
   ok = await shapesCheck(py, env, png, raw, tmp, ok);
   ok = await rotationCheck(py, env, png, raw, tmp, ok);

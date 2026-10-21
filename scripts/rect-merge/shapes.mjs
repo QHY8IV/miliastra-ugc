@@ -28,6 +28,7 @@ import { Worker } from 'node:worker_threads';
 import { layered, readWeights } from './layered.mjs';
 import { makeRefiner } from './shapes-refine.mjs';
 import { tileGrid, buildTileJobs, makeLocator } from './shapes-tiles.mjs';
+import { startGpu } from './shapes-gpu.mjs';
 import { Q_POS, Q_ANG, AQ_MAX, Q_FEATHER, SOFT_L, KIND_ELLIPSE, KIND_ROTRECT, KIND_TRIANGLE, KIND_RING, KIND_SOFT, KIND_BY_NAME, IMAGE_ID, SHAPE_CONSTS, coverageInto, shapeParams, insideImage, renderItems, maeOf, makeSearch, normalizeSeedShape } from './shapes-core.mjs';
 export { Q_POS, Q_ANG, AQ_MAX, Q_FEATHER, SOFT_L, KIND_ELLIPSE, KIND_ROTRECT, KIND_TRIANGLE, KIND_RING, KIND_SOFT, KIND_BY_NAME, IMAGE_ID, SHAPE_CONSTS, coverageInto, shapeParams, insideImage, renderItems, maeOf, normalizeSeedShape };
 
@@ -38,7 +39,7 @@ function baselineL1(raw, W, H, rects, IW = null) {
   return s;
 }
 
-export async function fitShapes(raw0, W, H, T, rects, { threads = 1, strength = 1, passes = 3, maxEval = 250, kinds = ['ellipse', 'rotrect'], minSeed = 1, noRotation = false, rotCost = 0, preferRot = 0, refit = 4, geom = 4, rectEdges = 3, prune = 3, interleave = true, parallelRefine = true, l1 = true, alphaOn = false, residual = true, seedShapes = [], spotCandidates = [], weights = null, maeMask = null, log = () => {} } = {}) {
+export async function fitShapes(raw0, W, H, T, rects, { threads = 1, strength = 1, passes = 3, maxEval = 250, kinds = ['ellipse', 'rotrect'], minSeed = 1, noRotation = false, rotCost = 0, preferRot = 0, refit = 4, geom = 4, rectEdges = 3, prune = 3, interleave = true, parallelRefine = true, gpu = false, gpuBatch = 0, gpuPython = 'python', l1 = true, alphaOn = false, residual = true, seedShapes = [], spotCandidates = [], weights = null, maeMask = null, log = () => {} } = {}) {
   const raw = new Uint8Array(new SharedArrayBuffer(raw0.length)); raw.set(raw0);      // 共享一份给工作线程
   // weights：逐像素视觉重要度 I（null = 不加权）。给定后**整个率失真目标函数换成加权 L1**：
   //   λ 由加权基线重新标定，接受/删除判据、修剪、几何微调、颜色重拟合都按 I 加权。
@@ -166,7 +167,10 @@ export async function fitShapes(raw0, W, H, T, rects, { threads = 1, strength = 
   let tried = 0, accepted = 0, removedTotal = 0;
   const byKind = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
   // 工作线程池：并行做「种子 → 候选」的搜索（读共享内存快照），主线程再按顺序精确评估并应用。
-  let pool = null, metaLen = 0;
+  let pool = null, metaLen = 0, gpuCli = null, gpuSeeds = 0;
+  // GPU 每批种子数：同一批里的种子都在同一份旧快照上算，批越大越快但互相重叠的越多、质量越差（400 px：批 128 与 CPU 的 8 线程完全一致，
+  // 256 / 384 批 MAE +1% / +2%）。重叠程度取决于「一批种子占图的面积比」，所以按像素数定：约 N / 1250（400 px → 128，1000 px → 800）。
+  const GPU_BATCH = gpuBatch > 0 ? gpuBatch : Math.max(64, Math.round(N / 1250));
   const syncMeta = (full) => {            // 把形状的包围盒、存活标志同步到共享数组（工作线程只读）
     for (let i = full ? 0 : metaLen; i < shapes.length; i++) { const bb = shapes[i].bb, o = i * 4; bbArr[o] = bb[0]; bbArr[o + 1] = bb[1]; bbArr[o + 2] = bb[2]; bbArr[o + 3] = bb[3]; }
     metaLen = shapes.length;
@@ -179,7 +183,7 @@ export async function fitShapes(raw0, W, H, T, rects, { threads = 1, strength = 
     let msgId = 0, fail = null;
     workers.forEach((w) => w.on('error', (e) => { if (fail) fail(e); }));
     pool = {
-      run: (seedsAll) => new Promise((resolve, reject) => {
+      run: (seedsAll, type) => new Promise((resolve, reject) => {
         fail = reject;
         const parts = workers.map(() => []);
         seedsAll.forEach((sd, i) => parts[i % threads].push(sd));
@@ -189,7 +193,7 @@ export async function fitShapes(raw0, W, H, T, rects, { threads = 1, strength = 
           pending++;
           const onMsg = (m) => { if (m.id !== id) return; w.off('message', onMsg); out.push(...m.out); if (--pending === 0) resolve(out); };
           w.on('message', onMsg);
-          w.postMessage({ id, seeds: parts[wi] });
+          w.postMessage({ id, type, seeds: parts[wi] });
         });
         if (!pending) resolve(out);
       }),
@@ -244,16 +248,60 @@ export async function fitShapes(raw0, W, H, T, rects, { threads = 1, strength = 
     const nShapeSeeds = items.length;
     if (residual) for (const r of makeResidualSeeds()) items.push({ i: -(items.length + 1), res: r });
     log(`  第 ${pass + 1} 遍：形状种子 ${nShapeSeeds}，残差种子 ${items.length - nShapeSeeds}`);
+    if (process.env.DSH_DUMP_STATE && pass === +(process.env.DSH_DUMP_PASS || 0)) {
+      // 调试：导出搜索快照 + 一批种子的 CPU 参考结果（GPU 搜索内核的对拍数据），然后退出
+      const dir = process.env.DSH_DUMP_STATE; fs.mkdirSync(dir, { recursive: true });
+      const wb = (name, arr) => fs.writeFileSync(dir + '/' + name, Buffer.from(arr.buffer, arr.byteOffset, arr.byteLength));
+      wb('raw.u8', raw); wb('cur.f32', cur); wb('err.f32', err); wb('top.i32', topArr); wb('vis.i32', vis); wb('alive.u8', aliveArr);
+      wb('bb.i32', bbArr.subarray(0, shapes.length * 4)); if (IW) wb('w.f32', IW);
+      const K = +(process.env.DSH_DUMP_K || 3000); let rs = 12345; const rnd = () => (rs = (rs * 1664525 + 1013904223) >>> 0) / 4294967296;
+      const pick = []; for (let n = 0; n < K && n < items.length; n++) pick.push(items[Math.floor(rnd() * items.length)]);
+      const seedsOut = [];
+      for (const it of pick) {
+        const sd = it.res ? { col: it.res.col, bb: it.res.bb, px: it.res.px } : { col: shapes[it.i].col, bb: shapes[it.i].bb, px: shapes[it.i].kind > 0 ? shapes[it.i].px : null };
+        const cand = search.searchSeed(sd);
+        const init = search.dbg.initFromRegion({ col: sd.col, bb: sd.bb, px: sd.px || (() => { const [x0, y0, x1, y1] = sd.bb; const px = new Int32Array((x1 - x0 + 1) * (y1 - y0 + 1)); let k = 0; for (let yy = y0; yy <= y1; yy++) for (let xx = x0; xx <= x1; xx++) px[k++] = yy * W + xx; return px; })() });
+        const tr0 = init.sxx + init.syy, diag = tr0 > 1e-9 ? Math.min(1, Math.abs(2 * init.sxy) / tr0) : 0, rbSeed = preferRot * diag, starts = [];
+        for (const name of kinds) {
+          const kind = KIND_BY_NAME[name], evalAt = search.dbg.scorer(kind);
+          for (const st of search.dbg.initsFor(kind, init)) for (const a0 of (alphaOn ? [AQ_MAX, 14] : [AQ_MAX])) { const v = st.slice(); v[5] = a0; starts.push({ kind, v, sc: evalAt(v, rbSeed) }); }
+        }
+        seedsOut.push({ col: sd.col, bb: sd.bb, init, rb: rbSeed, starts, cand: cand ? { kind: cand.kind, q: cand.q, j: cand.j, rb: cand.rb || 0 } : null });
+      }
+      fs.writeFileSync(dir + '/meta.json', JSON.stringify({ W, H, T, LAMBDA, kinds, noRotation, rotCost, preferRot, maxEval, alphaOn, nShapes: shapes.length, hasWeights: !!IW, CAP }));
+      fs.writeFileSync(dir + '/seeds.json', JSON.stringify(seedsOut));
+      log('已导出搜索快照 ' + dir + '，种子 ' + seedsOut.length + '，有候选 ' + seedsOut.filter((x) => x.cand).length);
+      process.exit(0);
+    }
     const before = accepted;
     let k = 0;
-    const B = pool ? threads * 16 : 1;
-    let tPool = 0, tApply = 0, tSync = 0;
+    const B = gpuCli ? GPU_BATCH : pool ? threads * 16 : 1;
+    let tPool = 0, tApply = 0, tSync = 0, tGpu = 0;
     const live = (it) => (it.res ? err[it.res.p] >= resThr : shapes[it.i].alive);
     for (let off = 0; off < items.length; off += B) {
       const batch = items.slice(off, off + B).filter(live);
       if (!batch.length) continue;
       let cands = null;
-      if (pool) {
+      const seedOf = (it) => (it.res ? { i: it.i, col: it.res.col, bb: it.res.bb, px: it.res.px } : { i: it.i, col: shapes[it.i].col, bb: shapes[it.i].bb, px: shapes[it.i].kind > 0 ? shapes[it.i].px : null });
+      if (gpuCli) {
+        // GPU 搜索：起点列表由 JS 算（有线程池就并行），打分 / 挑起点 / 爬山在 GPU 上，tryAdd 仍是 CPU 上的精确判据
+        try {
+          let t1 = Date.now(); syncMeta(false);
+          const seedsIn = batch.map(seedOf);
+          const sts = pool ? await pool.run(seedsIn, 'starts') : seedsIn.map((sd) => ({ i: sd.i, st: search.startsFor(sd) }));
+          const stMap = new Map(sts.map((r) => [r.i, r.st])); tPool += Date.now() - t1; t1 = Date.now();
+          await gpuCli.sync(cur, err, topArr, vis, aliveArr, bbArr, shapes.length); tSync += Date.now() - t1; t1 = Date.now();
+          const ordered = batch.map((it) => stMap.get(it.i));
+          const res = await gpuCli.search(ordered);
+          tGpu += Date.now() - t1; gpuSeeds += batch.length;
+          cands = new Map(batch.map((it, bi) => [it.i, res.found[bi] ? { kind: res.kind[bi], q: [res.q[bi * 6], res.q[bi * 6 + 1], res.q[bi * 6 + 2], res.q[bi * 6 + 3], res.q[bi * 6 + 4], res.q[bi * 6 + 5], 0, 0], j: res.j[bi], rb: ordered[bi].rb } : null]));
+        } catch (e) {
+          log('⚠ GPU 搜索出错，这一批起退回 CPU 线程池：' + e.message);
+          try { await gpuCli.close(); } catch { /* 已退出 */ }
+          gpuCli = null;
+        }
+      }
+      if (!cands && pool) {
         let t1 = Date.now(); syncMeta(false); tSync += Date.now() - t1; t1 = Date.now();
         const res = await pool.run(batch.map((it) => it.res ? { i: it.i, col: it.res.col, bb: it.res.bb, px: it.res.px } : { i: it.i, col: shapes[it.i].col, bb: shapes[it.i].bb, px: shapes[it.i].kind > 0 ? shapes[it.i].px : null }));
         tPool += Date.now() - t1;
@@ -274,7 +322,7 @@ export async function fitShapes(raw0, W, H, T, rects, { threads = 1, strength = 
       }
       tApply += Date.now() - t2;
     }
-    log(`第 ${pass + 1} 遍：收 ${accepted - before}，当前 ${shapes.filter((s) => s.alive).length} 个形状（线程池 ${(tPool / 1000).toFixed(1)}s，主线程应用 ${(tApply / 1000).toFixed(1)}s，同步 ${(tSync / 1000).toFixed(1)}s）`);
+    log(`第 ${pass + 1} 遍：收 ${accepted - before}，当前 ${shapes.filter((s) => s.alive).length} 个形状（${gpuCli ? `GPU：起点 ${(tPool / 1000).toFixed(1)}s、搜索 ${(tGpu / 1000).toFixed(1)}s，` : '线程池 ' + (tPool / 1000).toFixed(1) + 's，'}主线程应用 ${(tApply / 1000).toFixed(1)}s，同步 ${(tSync / 1000).toFixed(1)}s）`);
   };
   const { colorSweep, geomSweep, rectSweep, pruneSweep } = R;
   const refineRoundSerial = (r) => {
@@ -351,12 +399,22 @@ export async function fitShapes(raw0, W, H, T, rects, { threads = 1, strength = 
   const refineRound = async (r) => { if (useParallelRefine()) await refineRoundParallel(r); else refineRoundSerial(r); };
   const rounds = Math.max(refit, geom, rectEdges, prune);
   try {
+    if (gpu) {
+      try {
+        if (kinds.some((k) => !['ellipse', 'rotrect', 'triangle', 'ring'].includes(k))) throw new Error('GPU 搜索只支持 ellipse / rotrect / triangle / ring');
+        if (noRotation) throw new Error('GPU 搜索暂不支持 --no-rotation');
+        const meta = { W, H, T, LAMBDA, kinds, rotCost, preferRot, maxEval, alphaOn, CAP, hasWeights: !!IW, nprog: 1024, side: 8, warps: 2 };
+        gpuCli = await startGpu({ python: gpuPython, meta, raw, weights: IW, log });
+        log(`GPU 搜索已启用（每批 ${GPU_BATCH} 个种子）`);
+      } catch (e) { log('⚠ GPU 搜索不可用，退回 CPU 线程池：' + e.message); gpuCli = null; }
+    }
     for (let pass = 0; pass < passes; pass++) {
       await addPass(pass);
       if (interleave && pass < passes - 1 && rounds > 0) await refineRound(0);
     }
     for (let r = 0; r < rounds; r++) await refineRound(r);
   } finally {
+    if (gpuCli) await gpuCli.close();
     if (pool) await pool.close();
   }
   // 收尾自检：从像素堆栈重算每个像素的渲染色，和缓存的 err 对一遍（分块并行精修把一部分写入交给了工作线程，
@@ -384,7 +442,7 @@ export async function fitShapes(raw0, W, H, T, rects, { threads = 1, strength = 
   const stats = { start: startN, rects: outRects.length, shapes: outShapes.length, total: outRects.length + outShapes.length,
     ellipses: byKind[1], rotrects: byKind[2], triangles: byKind[3], rings: byKind[4], softs: byKind[5], removed: removedTotal, lambda: LAMBDA, startMAE: startErr / (N * 3), mae: totalErr() / (N * 3),
     maeEdge, maeOther, weighted: !!IW,
-    seeded: seedIds.filter((i) => shapes[i].alive).length, seededIn: seedIds.length, stackMismatch };   // 预置底层形状：活下来的 / 一共放进去的
+    seeded: seedIds.filter((i) => shapes[i].alive).length, seededIn: seedIds.length, stackMismatch, gpuSeeds };   // 预置底层形状：活下来的 / 一共放进去的
   return { rects: outRects, shapes: outShapes, stats };
 }
 
@@ -423,6 +481,6 @@ if (process.argv[1] && fileURLToPath(import.meta.url).toLowerCase() === fs.realp
   const r = await fitShapes(raw, W, H, T, base.rects, { threads: num('--threads', Math.max(1, Math.min(8, os.cpus().length - 2))), strength: num('--strength', 1), passes: num('--passes', 3), maxEval: num('--max-eval', 250),
     kinds: opt('--kinds', 'ellipse,rotrect').split(','), noRotation: a.includes('--no-rotation'), rotCost: num('--rotation-cost', 0), preferRot: num('--prefer-rotation', 0), seedShapes, weights, maeMask,
     refit: fast ? 0 : num('--refit', 4), geom: fast ? 0 : num('--geom', 4), rectEdges: fast ? 0 : num('--rect-edges', 3), prune: fast ? 0 : num('--prune', 3),
-    interleave: !fast && !a.includes('--no-interleave'), parallelRefine: !a.includes('--no-parallel-refine'), l1: !a.includes('--no-l1'), alphaOn: a.includes('--alpha'), residual: !a.includes('--no-residual'), log: (s) => console.error(s) });
+    interleave: !fast && !a.includes('--no-interleave'), parallelRefine: !a.includes('--no-parallel-refine'), gpu: a.includes('--gpu'), gpuBatch: num('--gpu-batch', 0), gpuPython: opt('--gpu-python', 'python'), l1: !a.includes('--no-l1'), alphaOn: a.includes('--alpha'), residual: !a.includes('--no-residual'), log: (s) => console.error(s) });
   process.stdout.write(JSON.stringify({ rects: r.rects, shapes: r.shapes, tiled: base.tiled, stats: r.stats, ms: Date.now() - t0 }));
 }

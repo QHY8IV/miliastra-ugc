@@ -789,7 +789,7 @@ def pack_layered_shapes(arr: np.ndarray, std_tol: float, strength: float = 1.0,
                         kinds: str = "ellipse,rotrect", alpha: bool = False,
                         threads: int = 0, seed_shapes_path: str = None,
                         importance: np.ndarray = None, mae_mask: np.ndarray = None,
-                        prefer_rotation: float = 0.0):
+                        prefer_rotation: float = 0.0, gpu: bool = False, gpu_batch: int = 0):
     """分层矩形 + 旋转矩形 / 椭圆 / 三角形 / 圆环 / 软边（shapes.mjs 做率失真替换）。
 
     返回 (blocks, tiled, shapes, stats)。绘制顺序 = blocks（先画的在下面）之后才是 shapes。
@@ -823,6 +823,11 @@ def pack_layered_shapes(arr: np.ndarray, std_tol: float, strength: float = 1.0,
         cmd.append("--alpha")
     if threads:
         cmd += ["--threads", str(threads)]
+    if gpu:
+        # GPU 搜索：shapes.mjs 会起 gpu_search_server.py（用当前这个 Python，需要 torch + CUDA + triton）；起不来就自动退回 CPU 线程池
+        cmd += ["--gpu", "--gpu-python", sys.executable]
+        if gpu_batch:
+            cmd += ["--gpu-batch", str(int(gpu_batch))]
     if seed_shapes_path:
         cmd += ["--seed-shapes", seed_shapes_path]
     if w_path:
@@ -1049,6 +1054,10 @@ def build_parser() -> argparse.ArgumentParser:
                     help="允许半透明形状（真机混合方式要先拿 28 号校准关卡确认）")
     ap.add_argument("--shape-threads", type=int, default=0,
                     help="形状搜索的线程数（默认自动：核数 − 2，最多 8）")
+    ap.add_argument("--gpu", action="store_true",
+                    help="形状搜索（占构建时间约 60%%）放到 GPU 上：需要 PyTorch(CUDA) + Triton；比 8 线程 CPU 快约 2～3 倍，结果与 CPU 几乎一致；起不来自动退回 CPU（实验性）")
+    ap.add_argument("--gpu-batch", type=int, default=0,
+                    help="GPU 每批种子数（默认 0 = 按图面积自动：像素数 / 1250；批越大越快但质量略降）")
     ap.add_argument("--shape-no-rotation", action="store_true",
                     help="只出不旋转的椭圆（真机里每个 SetLocalRotation 约 10 ms，会明显拖慢加载）")
     ap.add_argument("--preset", choices=["best"],
@@ -1272,7 +1281,7 @@ def main():
                 args.shape_rotation_cost, args.shape_no_refine, args.shape_kinds,
                 args.shape_alpha, args.shape_threads, seed_shapes_path=spot_json,
                 importance=weights, mae_mask=emask,
-                prefer_rotation=args.shape_prefer_rotation)
+                prefer_rotation=args.shape_prefer_rotation, gpu=args.gpu, gpu_batch=args.gpu_batch)
         elif layered:
             blocks, tiled = pack_layered(q, std_eff, weights)
         else:
