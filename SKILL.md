@@ -22,6 +22,7 @@ description: >-
 | **官方正文之外的补充**（含官方完整示例代码） | `references/index.md` §1.6 → `references/live/` |
 | 写/审客户端 Lua UI 脚本 | `references/lua-ui-playbook.md` + `references/api/*` |
 | **图片拟合成图元，用 Lua 绘制；减少图元/控件数量、优化画质与初始化** | **`references/primitive-ui-playbook.md`**（GitHub 项目、拟合参数、Lua 导出与挂载、回归检验） |
+| **图片切成纯色矩形精确铺满，用 Lua 绘制**（接近原图；按 STD 控制误差与控件数；p64 编码让 Lua 端计算最少；`--layered` 允许重叠，同画质控件再少：插画 4%～20%，像素画无损 36%～42%；`to-gia.mjs` 写成图片素材组 .gia、`to-gil.mjs` 直接编进关卡 .gil，都不用 Lua 现场建控件；**推荐 `compress.py --preset best`**：先铺 150 个光斑 + 椭圆 / 旋转矩形 / 三角形 / 圆环 + 半透明形状，同画质比纯矩形少约 40%～50% 的控件，4 万控件 ≈ 20 MiB 存档上限，只走脚本版 .gil；**要更高画质先加画布密度而不是控件数**（1000 px + `--unit 1` 最强、800 px + `--unit 1.25` 次之，占位都是 1000，都已真机通过，§2.18）；**画风也是选项**（§2.16：素材做成平涂后同一套参数省约 80%，并顺带消掉阶梯锯齿）） | **`references/rect-merge-playbook.md`**（工具：`scripts/rect-merge/`，自检 `node scripts/rect-merge/check.mjs --selftest`） |
 | **图元项目的性能体检**（矩形还能不能更少、这一帧有多少图元是白画的、逐帧开销花在哪） | **`references/primitive-ui-playbook.md`** §6–8 + 工具 `node scripts/primitive-budget.mjs --selftest`（`cover` / `frame` 两个模式，零依赖） |
 | **离线跑 / 冒烟 / 场景测试客户端 Lua**（没有真机时；语法、拼写、控件名、补间、点击、整数浮点） | **`references/formats/lua-sim.md`**（工具：`node scripts/sim-lua.mjs --help`；完整示例 `references/examples/circle-challenge/`） |
 | **读/写 `.gil` / `.gia` 存档文件**（Lua 写进关卡、生成节点图、控件名核对、diff） | **`references/formats/README.md`**（工具：`node scripts/gi.mjs --help`） |
